@@ -12,7 +12,7 @@ class Boid {
   boolean prevMousePressed = false; // Previous mouse pressed state
 
   // Constants for the simulation
-  static final float MAX_FORCE = 0.05f; // Maximum steering force
+  static final float MAX_FORCE = 0.03f; // Maximum steering force
   static final float MAX_SPEED = 2;     // Maximum speed
   static final float MAX_CHASE_SPEED = 1.5;     // Maximum speed
   static final float DESIRED_SEPARATION = 25.0f; // Desired separation between boids
@@ -20,7 +20,7 @@ class Boid {
   static final float SEPARATION_WEIGHT = 1.5f; // Weight for separation force
   static final float ALIGNMENT_WEIGHT = 1.0f; // Weight for alignment force
   static final float COHESION_WEIGHT = 1.0f; // Weight for cohesion force
-  static final float BOID_SIZE = 6; // Size of the boid
+  static final float BOID_SIZE = 2; // Size of the boid
 
   boolean debug = false; // Toggle for debug mode
   boolean influences = false; //Toggle for debug influences

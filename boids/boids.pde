@@ -4,9 +4,9 @@ boolean influences = false; // Global debug influences flag
 
 
 void setup() {
-  size(800, 600);  // Set the size of the window
+  size(640, 360);  // Set the size of the window
   flock = new Flock();  // Create a new flock
-  for (int i = 0; i < 50; i++) {
+  for (int i = 0; i < 150; i++) {
     flock.addBoid(new Boid(random(width), random(height))); // Add 150 boids at random positions
   }
 }
