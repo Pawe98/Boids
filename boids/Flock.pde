@@ -2,7 +2,7 @@ import java.util.ArrayList;
 
 class Flock {
   ArrayList<Boid> boids; // List of all boids in the flock
-
+  Boid controlledBoid;
   // Constructor initializes the list of boids
   Flock() {
     boids = new ArrayList<Boid>();
@@ -11,6 +11,16 @@ class Flock {
   // Add a new boid to the flock
   void addBoid(Boid b) {
     boids.add(b);
+  }
+
+  // Add a new boid to the flock
+  void addControlledBoid(Boid b) {
+    boids.add(b);
+    controlledBoid = b;
+  }
+
+  void removeBoid(Boid b) {
+    boids.remove(b);
   }
 
   // Run the simulation for all boids in the flock
