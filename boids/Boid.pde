@@ -16,18 +16,18 @@ class Boid {
   static final float MAX_FORCE = 0.03f; // Maximum steering force
   static final float MAX_SPEED = 2;     // Maximum speed
 
-  static final float DESIRED_SEPARATION = 55.0f; // Desired separation between boids
-  static final float NEIGHBOR_DIST = 300.0f; // Distance to consider boids as neighbors
+  static final float DESIRED_SEPARATION = 15.0f; // Desired separation between boids
+  static final float NEIGHBOR_DIST = 120.0f; // Distance to consider boids as neighbors
   static final float SEPARATION_WEIGHT = 1.5f; // Weight for separation force
   static final float ALIGNMENT_WEIGHT = 1.0f; // Weight for alignment force
   static final float COHESION_WEIGHT = 1.0f; // Weight for cohesion force
-  static final float BOID_SIZE = 5; // Size of the boid
+  static final float BOID_SIZE = 3; // Size of the boid
 
   static final float LEADER_INFLUENCE_WEIGHT_SEPARATE = 1.5f; // Weight for leader's influence
   static final float LEADER_INFLUENCE_WEIGHT_ALIGN = 1.0f; // Weight for leader's influence
   static final float LEADER_INFLUENCE_WEIGHT_COHERE = 1.0f; // Weight for leader's influence
 
-  static final float LEADER_INFLUENCE_WEIGHT_CHASE = 1.0f;
+  static final float LEADER_INFLUENCE_WEIGHT_CHASE = 1.0f; // Weight on how much the leader is chased
 
 
   boolean debug = false; // Toggle for debug mode
@@ -74,7 +74,7 @@ class Boid {
     PVector alignment = align(boids, leader);     // Align with neighbors
     PVector cohesion = cohere(boids, leader);     // Move towards the average position of neighbors
 
-    PVector chaseLeader = chase(leader);
+    PVector chaseLeader = chase(boids, leader);
 
 
     // Weight these forces
@@ -85,10 +85,10 @@ class Boid {
 
     if (!isControlled) {
       // Apply the calculated forces
-      applyForce(chaseLeader);
       applyForce(separation);
       applyForce(alignment);
       applyForce(cohesion);
+      applyForce(chaseLeader);
     }
   }
 
@@ -109,29 +109,31 @@ class Boid {
     return closestLeader;
   }
 
-  PVector chase(Boid leader) {
-  if (leader != null) {
-    float d = position.dist(leader.position);
-    if ((d > 0) && (d < NEIGHBOR_DIST) && (d > DESIRED_SEPARATION)) {
-      // Add a component to steer towards the leader's position
-      PVector desired = PVector.sub(leader.position, position);
+  PVector chase(ArrayList<Boid> boids, Boid leader) {
+    if (leader != null) {
+      float d = position.dist(leader.position);
+      if ((d > 0) && (d < NEIGHBOR_DIST) && (d > DESIRED_SEPARATION)) {
+        // Add a component to steer towards the leader's position
+        PVector desired = PVector.sub(leader.position, position);
 
-      // Calculate the scaling factor inversely proportional to the distance
-      float scale = map(d, DESIRED_SEPARATION, NEIGHBOR_DIST, 0, 1);
+        // Calculate the scaling factor inversely proportional to the distance
+        float scale = map(d, DESIRED_SEPARATION, NEIGHBOR_DIST, 0, 1);
 
-      desired.normalize();
-      desired.mult(MAX_SPEED * scale); // Scale the desired velocity
-      PVector steerTowardsLeader = PVector.sub(desired, velocity);
-      steerTowardsLeader.limit(MAX_FORCE * scale); // Scale the steering force
-      
-      //fill(255, 0, 0);
-      //ellipse(position.x + steerTowardsLeader.x * 1000, position.y + steerTowardsLeader.y * 1000, 20, 20);
+        desired.normalize();
+        desired.mult(MAX_SPEED * scale); // Scale the desired velocity
+        PVector steerTowardsLeader = PVector.sub(desired, velocity);
+        steerTowardsLeader.limit(MAX_FORCE * scale); // Scale the steering force
 
-      return steerTowardsLeader;
+        //fill(255, 0, 0);
+        //ellipse(position.x + steerTowardsLeader.x * 1000, position.y + steerTowardsLeader.y * 1000, 20, 20);
+
+        PVector separationForce = separate(boids, leader);
+        steerTowardsLeader.add(separationForce);
+        return steerTowardsLeader;
+      }
     }
+    return new PVector(0, 0);
   }
-  return new PVector(0, 0);
-}
 
   // Separation: Steer to avoid crowding local flockmates
   PVector separate(ArrayList<Boid> boids, Boid leader) {
@@ -216,7 +218,6 @@ class Boid {
       sum.setMag(MAX_SPEED);     // Set magnitude to maximum speed
       PVector steer = PVector.sub(sum, velocity); // Calculate steering force
       steer.limit(MAX_FORCE);    // Limit to maximum steering force
-      println(steer);
       return steer; // Return the calculated steering force
     } else {
       return new PVector(0, 0); // If no neighbors, return zero steering force
@@ -354,9 +355,6 @@ class Boid {
       }
     }
   }
-
-
-
 
   // Wrap around the edges of the window
   void edges() {

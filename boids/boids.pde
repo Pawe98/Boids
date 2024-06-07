@@ -13,7 +13,7 @@ void setup() {
   controlledLeader.velocity = new PVector(0.0,0.0);
   controlledLeader.acceleration = new PVector(0,0);
   flock = new Flock();  // Create a new flock
-  for (int i = 0; i < 10; i++) {
+  for (int i = 0; i < 100; i++) {
     flock.addBoid(new Boid(random(width), random(height))); // Add 150 boids at random positions
   }
 }
