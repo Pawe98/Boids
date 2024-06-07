@@ -23,9 +23,11 @@ class Boid {
   static final float COHESION_WEIGHT = 1.0f; // Weight for cohesion force
   static final float BOID_SIZE = 5; // Size of the boid
 
-  static final float LEADER_INFLUENCE_WEIGHT_SEPARATE = 0.0f; // Weight for leader's influence
-  static final float LEADER_INFLUENCE_WEIGHT_ALIGN = 0.0f; // Weight for leader's influence
-  static final float LEADER_INFLUENCE_WEIGHT_COHERE = 0.0f; // Weight for leader's influence
+  static final float LEADER_INFLUENCE_WEIGHT_SEPARATE = 1.5f; // Weight for leader's influence
+  static final float LEADER_INFLUENCE_WEIGHT_ALIGN = 1.0f; // Weight for leader's influence
+  static final float LEADER_INFLUENCE_WEIGHT_COHERE = 1.0f; // Weight for leader's influence
+
+  static final float LEADER_INFLUENCE_WEIGHT_CHASE = 1.0f;
 
 
   boolean debug = false; // Toggle for debug mode
@@ -72,14 +74,18 @@ class Boid {
     PVector alignment = align(boids, leader);     // Align with neighbors
     PVector cohesion = cohere(boids, leader);     // Move towards the average position of neighbors
 
+    PVector chaseLeader = chase(leader);
+
 
     // Weight these forces
     separation.mult(SEPARATION_WEIGHT);
     alignment.mult(ALIGNMENT_WEIGHT);
     cohesion.mult(COHESION_WEIGHT);
+    chaseLeader.mult(LEADER_INFLUENCE_WEIGHT_CHASE);
 
     if (!isControlled) {
       // Apply the calculated forces
+      applyForce(chaseLeader);
       applyForce(separation);
       applyForce(alignment);
       applyForce(cohesion);
@@ -103,6 +109,30 @@ class Boid {
     return closestLeader;
   }
 
+  PVector chase(Boid leader) {
+  if (leader != null) {
+    float d = position.dist(leader.position);
+    if ((d > 0) && (d < NEIGHBOR_DIST) && (d > DESIRED_SEPARATION)) {
+      // Add a component to steer towards the leader's position
+      PVector desired = PVector.sub(leader.position, position);
+
+      // Calculate the scaling factor inversely proportional to the distance
+      float scale = map(d, DESIRED_SEPARATION, NEIGHBOR_DIST, 0, 1);
+
+      desired.normalize();
+      desired.mult(MAX_SPEED * scale); // Scale the desired velocity
+      PVector steerTowardsLeader = PVector.sub(desired, velocity);
+      steerTowardsLeader.limit(MAX_FORCE * scale); // Scale the steering force
+      
+      //fill(255, 0, 0);
+      //ellipse(position.x + steerTowardsLeader.x * 1000, position.y + steerTowardsLeader.y * 1000, 20, 20);
+
+      return steerTowardsLeader;
+    }
+  }
+  return new PVector(0, 0);
+}
+
   // Separation: Steer to avoid crowding local flockmates
   PVector separate(ArrayList<Boid> boids, Boid leader) {
     PVector steer = new PVector(0, 0); // Initialize the steering vector
@@ -110,30 +140,31 @@ class Boid {
 
     // Loop through all boids
     for (Boid other : boids) {
-      // Calculate distance between this boid and another boid
-      float d = position.dist(other.position);
+      if ( other != leader) {
+        // Calculate distance between this boid and another boid
+        float d = position.dist(other.position);
 
-      // If the other boid is too close
-      if ((d > 0) && (d < DESIRED_SEPARATION)) {
-        // Calculate vector pointing away from the other boid
-        PVector diff = PVector.sub(position, other.position);
-        diff.normalize(); // Normalize to get direction
-        diff.div(d);      // Weight by distance
-        steer.add(diff);  // Add to steering vector
-        count++; // Increment count of close boids
+        // If the other boid is too close
+        if ((d > 0) && (d < DESIRED_SEPARATION)) {
+          // Calculate vector pointing away from the other boid
+          PVector diff = PVector.sub(position, other.position);
+          diff.normalize(); // Normalize to get direction
+          diff.div(d);      // Weight by distance
+          steer.add(diff);  // Add to steering vector
+          count++; // Increment count of close boids
+        }
       }
     }
 
     // If a leader is found and within separation range, add its influence
     if (leader != null) {
       float d = position.dist(leader.position);
-      if (d < DESIRED_SEPARATION) {
+      if ((d > 0) && d < DESIRED_SEPARATION) {
         PVector diff = PVector.sub(position, leader.position);
-        diff.normalize();
-        diff.div(d);
-        diff.mult(LEADER_INFLUENCE_WEIGHT_SEPARATE); // Apply leader influence weight
-        steer.add(diff);
-        count++;
+        diff.normalize(); // Normalize to get direction
+        diff.div(d);      // Weight by distance
+        steer.add(diff.mult(LEADER_INFLUENCE_WEIGHT_SEPARATE));  // Add to steering vector
+        count+= LEADER_INFLUENCE_WEIGHT_SEPARATE;
       }
     }
 
@@ -159,22 +190,24 @@ class Boid {
 
     // Loop through all boids
     for (Boid other : boids) {
-      // Calculate distance between this boid and another boid
-      float d = position.dist(other.position);
+      if ( other != leader) {
+        // Calculate distance between this boid and another boid
+        float d = position.dist(other.position);
 
-      // If the other boid is a neighbor
-      if ((d > 0) && (d < NEIGHBOR_DIST)) {
-        sum.add(other.velocity); // Add the velocity
-        count++; // Increment count of neighboring boids
+        // If the other boid is a neighbor
+        if ((d > 0) && (d < NEIGHBOR_DIST)) {
+          sum.add(other.velocity); // Add the velocity
+          count++; // Increment count of neighboring boids
+        }
       }
     }
 
     // If a leader is found and within neighbor range, add its influence
     if (leader != null) {
       float d = position.dist(leader.position);
-      if (d < NEIGHBOR_DIST) {
+      if ((d > 0) && (d < NEIGHBOR_DIST)) {
         sum.add(PVector.mult(leader.velocity, LEADER_INFLUENCE_WEIGHT_ALIGN)); // Apply leader influence weight
-        count ++;
+        count+= LEADER_INFLUENCE_WEIGHT_ALIGN;
       }
     }
 
@@ -183,8 +216,6 @@ class Boid {
       sum.setMag(MAX_SPEED);     // Set magnitude to maximum speed
       PVector steer = PVector.sub(sum, velocity); // Calculate steering force
       steer.limit(MAX_FORCE);    // Limit to maximum steering force
-      // fill(0, 255, 0);
-      //ellipse(position.x + steer.x*1000, position.y + steer.y * 1000, 20, 20);
       println(steer);
       return steer; // Return the calculated steering force
     } else {
@@ -199,20 +230,22 @@ class Boid {
 
     // Loop through all boids
     for (Boid other : boids) {
-      // Calculate distance between this boid and another boid
-      float d = position.dist(other.position);
+      if ( other != leader) {
+        // Calculate distance between this boid and another boid
+        float d = position.dist(other.position);
 
-      // If the other boid is a neighbor
-      if ((d > 0) && (d < NEIGHBOR_DIST)) {
-        sum.add(other.position); // Add the position
-        count++; // Increment count of neighboring boids
+        // If the other boid is a neighbor
+        if ((d > 0) && (d < NEIGHBOR_DIST)) {
+          sum.add(other.position); // Add the position
+          count++; // Increment count of neighboring boids
+        }
       }
     }
 
 
     if (leader != null) {
       float d = position.dist(leader.position);
-      if (d < NEIGHBOR_DIST) {
+      if ((d > 0) && (d < NEIGHBOR_DIST)) {
         sum.add(PVector.mult(leader.position, LEADER_INFLUENCE_WEIGHT_COHERE)); // Apply leader influence weight
         count += LEADER_INFLUENCE_WEIGHT_COHERE;
       }
@@ -220,8 +253,8 @@ class Boid {
 
     if (count > 0) {
       sum.div((float) count); // Average position
-      fill(255, 0, 0);
-      ellipse(position.x + seek(sum).x*1000, position.y + seek(sum).y * 1000, 20, 20);
+      //fill(255, 0, 0);
+      //ellipse(position.x + seek(sum).x*1000, position.y + seek(sum).y * 1000, 20, 20);
       return seek(sum);       // Steer towards the average position
     } else {
       return new PVector(0, 0); // If no neighbors, return zero steering force
