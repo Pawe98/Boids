@@ -18,18 +18,20 @@ public static final float ANGLE_INCREMENT = 0.02;
 public static final float MAX_FORCE = 0.03f; // Maximum steering force
 public static final float MAX_SPEED = 2;     // Maximum speed
 
-public static final float DESIRED_SEPARATION = 55.0f; // Desired separation between boids
-public static final float NEIGHBOR_DIST = 220.0f; // Distance to consider boids as neighbors
+public static final float DESIRED_SEPARATION = 35.0f; // Desired separation between boids
+public static final float NEIGHBOR_DIST = 250.0f; // Distance to consider boids as neighbors
 public static final float SEPARATION_WEIGHT = 1.5f; // Weight for separation force
 public static final float ALIGNMENT_WEIGHT = 1.0f; // Weight for alignment force
 public static final float COHESION_WEIGHT = 1.0f; // Weight for cohesion force
 public static final float BOID_SIZE = 3; // Size of the boid
 
-public static final float LEADER_INFLUENCE_WEIGHT_SEPARATE = 10.5f; // Weight for leader's influence
-public static final float LEADER_INFLUENCE_WEIGHT_ALIGN = 10.0f; // Weight for leader's influence
-public static final float LEADER_INFLUENCE_WEIGHT_COHERE = 10.0f; // Weight for leader's influence
+public static final boolean OVERRIDE_LIMITS_FOR_LEADER_INFLUENCE = true;
 
-public static final float LEADER_INFLUENCE_WEIGHT_CHASE = 20.0f; // Weight on how much the leader is chased
+public static final float LEADER_INFLUENCE_WEIGHT_SEPARATE = 1.5f; // Weight for leader's influence
+public static final float LEADER_INFLUENCE_WEIGHT_ALIGN = 1.0f; // Weight for leader's influence
+public static final float LEADER_INFLUENCE_WEIGHT_COHERE = 1.0f; // Weight for leader's influence
+
+public static final float LEADER_INFLUENCE_WEIGHT_CHASE = 1.0f; // Weight on how much the leader is chased
 
 Boid controlledLeader = new Boid(0, 0);
 
@@ -58,7 +60,7 @@ void draw() {
     circleRadius = dist(circleCenter.x, circleCenter.y, mouseX, mouseY);
   }
 
-  if (circleCenter != null) {
+  if (circleCenter != null && circleRadius > 0f) {
     drawCircle(controlledLeader);
   }
 
@@ -67,6 +69,7 @@ void draw() {
     noFill();
     ellipse(circleCenter.x, circleCenter.y, circleRadius * 2, circleRadius * 2);
   }
+  //println(controlledLeader.position);
 }
 
 void drawCircle(Boid controlledBoid) {
@@ -128,9 +131,10 @@ void mousePressed() {
   } else if (mouseButton == RIGHT) {
     rightClicked = !rightClicked;
     if (rightClicked) {
-      print("right" + controlledLeader.isLeader);
+      println("right" + controlledLeader.isLeader);
       flock.addControlledBoid(controlledLeader);
     } else {
+      println("nright" + controlledLeader.isLeader);
       flock.removeBoid(controlledLeader);
     }
   }
