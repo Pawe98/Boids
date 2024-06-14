@@ -12,6 +12,11 @@ class Flock {
   void addBoid(Boid b) {
     boids.add(b);
   }
+  
+  // Add a new boid list to the flock
+  void addAllBoids(List<Boid> b) {
+    boids.addAll(b);
+  }
 
   // Add a new boid to the flock
   void addControlledBoid(Boid b) {
