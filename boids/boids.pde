@@ -196,9 +196,9 @@ void keyPressed() {
 
 
 void mousePressed() {
-  if (mouseButton == LEFT) {
+  if (mouseButton == LEFT && !showMenu) {
     leftClicked = !leftClicked;
-    if (leftClicked && !showMenu) {
+    if (leftClicked) {
       circleCenter = new PVector(mouseX, mouseY);
     }
   } else if (mouseButton == RIGHT) {
