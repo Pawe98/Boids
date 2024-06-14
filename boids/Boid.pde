@@ -387,47 +387,64 @@ class Boid {
   // Wrap around the edges of the window
   //TODO DOES NOT WORK BUT IS EASILY FIXABLE. JUST RETURN THE CLONE and delete the original once the clone enters, or delete the clone if the original boid reenters without leaving the screen.
 void edges() {
-  float bufferZone = max(desiredSeparation, neighborDist); // Use the larger of desiredSeparation and neighborDist for buffer zone
+  //float bufferZone = max(desiredSeparation, neighborDist); // Use the larger of desiredSeparation and neighborDist for buffer zone
 
-  boolean inBufferZoneXRight = false;
-  boolean inBufferZoneXLeft = false;
-  boolean inBufferZoneYDown = false;
-  boolean inBufferZoneYUp = false;
+  //boolean inBufferZoneXRight = false;
+  //boolean inBufferZoneXLeft = false;
+  //boolean inBufferZoneYDown = false;
+  //boolean inBufferZoneYUp = false;
 
-  // Check horizontal wrapping and manage duplication
-  if (position.x > width - bufferZone) {
-    inBufferZoneXRight = true;
-  } else if (position.x < bufferZone) {
-    inBufferZoneXLeft = true;
-  }
+  //// Check horizontal wrapping and manage duplication
+  //if (position.x > width - bufferZone) {
+  //  inBufferZoneXRight = true;
+  //} else if (position.x < bufferZone) {
+  //  inBufferZoneXLeft = true;
+  //}
 
-  // Check vertical wrapping and manage duplication
-  if (position.y > height - bufferZone) {
-    inBufferZoneYDown = true;
-  } else if (position.y < bufferZone) {
-    inBufferZoneYUp = true;
-  }
+  //// Check vertical wrapping and manage duplication
+  //if (position.y > height - bufferZone) {
+  //  inBufferZoneYDown = true;
+  //} else if (position.y < bufferZone) {
+  //  inBufferZoneYUp = true;
+  //}
 
-  // If the boid is in a buffer zone, duplicate it into the corresponding buffer zone
-  if (inBufferZoneXRight || inBufferZoneXLeft || inBufferZoneYDown || inBufferZoneYUp) {
+  //// If the boid is in a buffer zone, duplicate it into the corresponding buffer zone
+  //if (inBufferZoneXRight || inBufferZoneXLeft || inBufferZoneYDown || inBufferZoneYUp) {
 
-    if (inBufferZoneXRight) {
-      inBufferZoneXRight = false; // Reset the buffer zone flag
-      duplicated = true;
-    } else if (inBufferZoneXLeft) {
-      inBufferZoneXLeft = false; // Reset the buffer zone flag
-      duplicated = true;
+  //  if (inBufferZoneXRight) {
+  //    inBufferZoneXRight = false; // Reset the buffer zone flag
+  //    duplicated = true;
+  //  } else if (inBufferZoneXLeft) {
+  //    inBufferZoneXLeft = false; // Reset the buffer zone flag
+  //    duplicated = true;
+  //  }
+
+  //  if (inBufferZoneYDown) {
+  //    inBufferZoneYDown = false; // Reset the buffer zone flag
+  //    duplicated = true;
+  //  } else if (inBufferZoneYUp) {
+  //    inBufferZoneYUp = false; // Reset the buffer zone flag
+  //    duplicated = true;
+  //  }
+
+  //}
+  
+  if (position.x > width) {
+        velocity.x = -velocity.x; // flip x velocity
+        position.x = width; // reposition inside the boundary
     }
-
-    if (inBufferZoneYDown) {
-      inBufferZoneYDown = false; // Reset the buffer zone flag
-      duplicated = true;
-    } else if (inBufferZoneYUp) {
-      inBufferZoneYUp = false; // Reset the buffer zone flag
-      duplicated = true;
+    if (position.x < 0) {
+        velocity.x = -velocity.x; // flip x velocity
+        position.x = 0; // reposition inside the boundary
     }
-
-  }
+    if (position.y > height) {
+        velocity.y = -velocity.y; // flip y velocity
+        position.y = height; // reposition inside the boundary
+    }
+    if (position.y < 0) {
+        velocity.y = -velocity.y; // flip y velocity
+        position.y = 0; // reposition inside the boundary
+    }
 }
 
 }
