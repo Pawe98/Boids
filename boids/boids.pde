@@ -47,13 +47,31 @@ boolean showMenu = false;
 void setup() {
   flock = new Flock();
   size(1000, 1000);  // Set the size of the window
+  
+  circleCenter = new PVector(width / 2, height / 2);
+  circleRadius = 300;
+  
   controlledLeader.isLeader = true;
-  controlledLeader.isControlled = isControlled;
-  controlledLeader.velocity = new PVector(0.0, 0.0);
-  controlledLeader.acceleration = new PVector(0, 0);
-  flock = new Flock();  // Create a new flock
+  controlledLeader.isControlled = true;
+  controlledLeader.position = new PVector(width / 2 + circleRadius, height / 2);
+  controlledLeader.velocity = new PVector(0, -maxSpeed); // Tangentialgeschwindigkeit
+  flock.addControlledBoid(controlledLeader);
+  
   for (int i = 0; i < NUM_BOIDS; i++) {
-    flock.addBoid(new Boid(random(1000), random(1000))); // Add 100 boids at random positions
+    float angle = map(i, 0, NUM_BOIDS, 0, TWO_PI);
+    float x = circleCenter.x + circleRadius * cos(angle);
+    float y = circleCenter.y + circleRadius * sin(angle);
+    PVector position = new PVector(x, y);
+
+    // Berechne die tangentiale Geschwindigkeit
+    float vx = -circleRadius * sin(angle) * (maxSpeed / circleRadius);
+    float vy = circleRadius * cos(angle) * (maxSpeed / circleRadius);
+    PVector velocity = new PVector(vx, vy);
+    velocity.setMag(maxSpeed);
+
+    Boid boid = new Boid(position.x, position.y);
+    boid.velocity.set(velocity);
+    flock.addBoid(boid);
   }
 
   // Initialize ControlP5
