@@ -16,8 +16,8 @@ class Boid {
   boolean influences = false; //Toggle for debug influences
 
   //for edge wrap, knowing if it is duplicated for beeing near screen edge / in a buffer zone
-  boolean duplicated = false; 
-  
+  boolean duplicated = false;
+
   // Constructor initializes the boid's position and gives it a random velocity
   Boid(float x, float y) {
     position = new PVector(x, y);     // Set initial position
@@ -314,60 +314,60 @@ class Boid {
   }
 
   // Display the boid as a triangle and show different behaviors with colors in debug mode
-  void display(ArrayList<Boid> boids) {
+  void display(PGraphics context, ArrayList<Boid> boids) {
     float theta = velocity.heading() + PI / 2; // Calculate heading angle
     if (isLeader) {
       // Display leader differently
-      fill(255, 0, 0); // Red color for leader
+      context.fill(255, 0, 0); // Red color for leader
     } else {
-      fill(127); // Normal color for other boids
+      context.fill(127); // Normal color for other boids
     }
 
-    stroke(200);
+    context.stroke(200);
 
-    pushMatrix();
-    translate(position.x, position.y);
-    rotate(theta);
-    beginShape();
-    vertex(0, -boidSize * 2);
-    vertex(-boidSize, boidSize * 2);
-    vertex(boidSize, boidSize * 2);
-    endShape(CLOSE);
-    popMatrix();
+    context.pushMatrix();
+    context.translate(position.x, position.y);
+    context.rotate(theta);
+    context.beginShape();
+    context.vertex(0, -boidSize * 2);
+    context.vertex(-boidSize, boidSize * 2);
+    context.vertex(boidSize, boidSize * 2);
+    context.endShape(CLOSE);
+    context.popMatrix();
 
     if (debug) {
       // Display detection radii
-      noFill();
-      stroke(255, 0, 0);
-      ellipse(position.x, position.y, desiredSeparation * 2, desiredSeparation * 2); // Separation radius
-      stroke(0, 255, 0);
-      ellipse(position.x, position.y, neighborDist * 2, neighborDist * 2); // Neighbor radius
+      context.noFill();
+      context.stroke(255, 0, 0);
+      context.ellipse(position.x, position.y, desiredSeparation * 2, desiredSeparation * 2); // Separation radius
+      context.stroke(0, 255, 0);
+      context.ellipse(position.x, position.y, neighborDist * 2, neighborDist * 2); // Neighbor radius
     }
 
     if (influences && isLeader) {
       // Show influence lines
-      showInfluences(boids);
+      showInfluences(context, boids);
     }
   }
 
-  void drawVector(PVector v, float scayl) {
-    pushMatrix();
+  void drawVector(PGraphics context, PVector v, float scayl) {
+    context.pushMatrix();
     // Translate to boid location
-    translate(position.x, position.y);
+    context.translate(position.x, position.y);
     // Line from origin
-    line(0, 0, v.x * scayl, v.y * scayl);
-    popMatrix();
+    context.line(0, 0, v.x * scayl, v.y * scayl);
+    context.popMatrix();
   }
 
-  void showInfluences(ArrayList<Boid> boids) {
+  void showInfluences(PGraphics context, ArrayList<Boid> boids) {
     for (Boid other : boids) {
       float d = PVector.dist(position, other.position);
 
       //// Alignment & Cohecion influence
       if ((d > 0) && (d < neighborDist)) {
-        stroke(0, 255, 0, map(d, 0, neighborDist, 255, 0)); // Green with intensity based on distance
-        strokeWeight(map(d, 0, neighborDist, 5, 0));
-        drawVector(PVector.sub(other.position, position), 1.0f);
+        context.stroke(0, 255, 0, map(d, 0, neighborDist, 255, 0)); // Green with intensity based on distance
+        context.strokeWeight(map(d, 0, neighborDist, 5, 0));
+        drawVector(context, PVector.sub(other.position, position), 1.0f);
       }
     }
 
@@ -376,75 +376,78 @@ class Boid {
 
       // Separation influence
       if ((d > 0) && (d < desiredSeparation)) {
-        stroke(255, 0, 0, map(d, 0, desiredSeparation, 255, 0)); // Red with intensity based on distance
-        strokeWeight(map(d, 0, desiredSeparation, 15, 0));
-        drawVector(PVector.sub(other.position, position), 1.0f);
+        context.stroke(255, 0, 0, map(d, 0, desiredSeparation, 255, 0)); // Red with intensity based on distance
+        context.strokeWeight(map(d, 0, desiredSeparation, 15, 0));
+        drawVector(context, PVector.sub(other.position, position), 1.0f);
       }
     }
-    strokeWeight(1);
+    context.strokeWeight(1);
   }
 
   // Wrap around the edges of the window
   //TODO DOES NOT WORK BUT IS EASILY FIXABLE. JUST RETURN THE CLONE and delete the original once the clone enters, or delete the clone if the original boid reenters without leaving the screen.
-void edges() {
-  //float bufferZone = max(desiredSeparation, neighborDist); // Use the larger of desiredSeparation and neighborDist for buffer zone
+  void edges() {
+    //float bufferZone = max(desiredSeparation, neighborDist); // Use the larger of desiredSeparation and neighborDist for buffer zone
 
-  //boolean inBufferZoneXRight = false;
-  //boolean inBufferZoneXLeft = false;
-  //boolean inBufferZoneYDown = false;
-  //boolean inBufferZoneYUp = false;
+    //boolean inBufferZoneXRight = false;
+    //boolean inBufferZoneXLeft = false;
+    //boolean inBufferZoneYDown = false;
+    //boolean inBufferZoneYUp = false;
 
-  //// Check horizontal wrapping and manage duplication
-  //if (position.x > width - bufferZone) {
-  //  inBufferZoneXRight = true;
-  //} else if (position.x < bufferZone) {
-  //  inBufferZoneXLeft = true;
-  //}
+    //// Check horizontal wrapping and manage duplication
+    //if (position.x > width - bufferZone) {
+    //  inBufferZoneXRight = true;
+    //} else if (position.x < bufferZone) {
+    //  inBufferZoneXLeft = true;
+    //}
 
-  //// Check vertical wrapping and manage duplication
-  //if (position.y > height - bufferZone) {
-  //  inBufferZoneYDown = true;
-  //} else if (position.y < bufferZone) {
-  //  inBufferZoneYUp = true;
-  //}
+    //// Check vertical wrapping and manage duplication
+    //if (position.y > height - bufferZone) {
+    //  inBufferZoneYDown = true;
+    //} else if (position.y < bufferZone) {
+    //  inBufferZoneYUp = true;
+    //}
 
-  //// If the boid is in a buffer zone, duplicate it into the corresponding buffer zone
-  //if (inBufferZoneXRight || inBufferZoneXLeft || inBufferZoneYDown || inBufferZoneYUp) {
+    //// If the boid is in a buffer zone, duplicate it into the corresponding buffer zone
+    //if (inBufferZoneXRight || inBufferZoneXLeft || inBufferZoneYDown || inBufferZoneYUp) {
 
-  //  if (inBufferZoneXRight) {
-  //    inBufferZoneXRight = false; // Reset the buffer zone flag
-  //    duplicated = true;
-  //  } else if (inBufferZoneXLeft) {
-  //    inBufferZoneXLeft = false; // Reset the buffer zone flag
-  //    duplicated = true;
-  //  }
+    //  if (inBufferZoneXRight) {
+    //    inBufferZoneXRight = false; // Reset the buffer zone flag
+    //    duplicated = true;
+    //  } else if (inBufferZoneXLeft) {
+    //    inBufferZoneXLeft = false; // Reset the buffer zone flag
+    //    duplicated = true;
+    //  }
 
-  //  if (inBufferZoneYDown) {
-  //    inBufferZoneYDown = false; // Reset the buffer zone flag
-  //    duplicated = true;
-  //  } else if (inBufferZoneYUp) {
-  //    inBufferZoneYUp = false; // Reset the buffer zone flag
-  //    duplicated = true;
-  //  }
+    //  if (inBufferZoneYDown) {
+    //    inBufferZoneYDown = false; // Reset the buffer zone flag
+    //    duplicated = true;
+    //  } else if (inBufferZoneYUp) {
+    //    inBufferZoneYUp = false; // Reset the buffer zone flag
+    //    duplicated = true;
+    //  }
 
-  //}
-  
-  if (position.x > width) {
-        velocity.x = -velocity.x; // flip x velocity
-        position.x = width; // reposition inside the boundary
+    //}
+
+    float edgeRepelRange = 100; // Range from edge where repulsion force starts
+    float edgeRepelStrength = 0.1; // Strength of the repulsion force
+
+    // Apply edge repulsion forces
+    if (position.x > width - edgeRepelRange) {
+      float forceMagnitude = map(position.x, width - edgeRepelRange, width, 0, edgeRepelStrength);
+      applyForce(new PVector(-forceMagnitude, 0)); // Apply force towards left
     }
-    if (position.x < 0) {
-        velocity.x = -velocity.x; // flip x velocity
-        position.x = 0; // reposition inside the boundary
+    if (position.x < edgeRepelRange) {
+      float forceMagnitude = map(position.x, 0, edgeRepelRange, edgeRepelStrength, 0);
+      applyForce(new PVector(forceMagnitude, 0)); // Apply force towards right
     }
-    if (position.y > height) {
-        velocity.y = -velocity.y; // flip y velocity
-        position.y = height; // reposition inside the boundary
+    if (position.y > height - edgeRepelRange) {
+      float forceMagnitude = map(position.y, height - edgeRepelRange, height, 0, edgeRepelStrength);
+      applyForce(new PVector(0, -forceMagnitude)); // Apply force towards top
     }
-    if (position.y < 0) {
-        velocity.y = -velocity.y; // flip y velocity
-        position.y = 0; // reposition inside the boundary
+    if (position.y < edgeRepelRange) {
+      float forceMagnitude = map(position.y, 0, edgeRepelRange, edgeRepelStrength, 0);
+      applyForce(new PVector(0, forceMagnitude)); // Apply force towards bottom
     }
-}
-
+  }
 }

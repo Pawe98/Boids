@@ -35,7 +35,13 @@ class Flock {
       b.flock(boids);  // Calculate and apply flocking behaviors
       b.update();      // Update the boid's position based on velocity and acceleration
       b.edges();       // Handle edge wrapping
-      b.display(boids);     // Draw the boid
+    }
+  }
+  
+  void display(PGraphics g) {
+    for (Boid b : boids) {
+      if(b != null)
+      b.display(g, boids);     // Draw the boid
     }
   }
 }
