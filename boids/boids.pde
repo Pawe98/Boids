@@ -31,6 +31,10 @@ float alignmentWeight = 1.0f; // Weight for alignment force
 float cohesionWeight = 1.0f; // Weight for cohesion force
 float boidSize = 3; // Size of the boid
 
+//TODO ADD FOV SLIDER
+//TODO ADD PLAY/PAUSE
+//TODO ADD FRAMECOUNTER to bottom of view
+
 
 
 float leaderInfluenceWeightSeparate = 1.5f; // Weight for leader's influence
