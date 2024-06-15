@@ -17,15 +17,15 @@ float circleRadius;
 float angle = 0; // Angle to determine the position on the circle
 
 // Static constants
-public static final int NUM_BOIDS = 25;
+public static final int NUM_BOIDS = 100;
 public static final boolean OVERRIDE_LIMITS_FOR_LEADER_INFLUENCE = true;
 
 // These will be adjustable via sliders
 float maxForce = 0.03f; // Maximum steering force
 float maxSpeed = 2;     // Maximum speed
-float desiredSeparation = 35.0f; // Desired separation between boids
-float neighborDist = 220.0f; // Distance to consider boids as neighbors
-float separationWeight = 1.5f; // Weight for separation force
+float desiredSeparation = 55.0f; // Desired separation between boids
+float neighborDist = 150.0f; // Distance to consider boids as neighbors
+float separationWeight = 2.5f; // Weight for separation force
 float alignmentWeight = 1.0f; // Weight for alignment force
 float cohesionWeight = 1.0f; // Weight for cohesion force
 float boidSize = 3; // Size of the boid
@@ -52,18 +52,33 @@ void setup() {
   controlledLeader.velocity = new PVector(0.0, 0.0);
   controlledLeader.acceleration = new PVector(0, 0);
   flock = new Flock();  // Create a new flock
-  for (int i = 0; i < NUM_BOIDS; i++) {
-    flock.addBoid(new Boid(random(1000), random(1000))); // Add 100 boids at random positions
-  }
 
+  circleCenter = new PVector(width / 2, height / 2);
+  circleRadius = 300;
+  for (int i = 0; i < NUM_BOIDS; i++) {
+    float angle = map(i, 0, NUM_BOIDS, 0, TWO_PI);
+    float x = circleCenter.x + circleRadius * cos(angle);
+    float y = circleCenter.y + circleRadius * sin(angle);
+    PVector position = new PVector(x, y);
+
+    // Berechne die tangentiale Geschwindigkeit
+    float vx = -circleRadius * sin(angle) * (maxSpeed / circleRadius);
+    float vy = circleRadius * cos(angle) * (maxSpeed / circleRadius);
+    PVector velocity = new PVector(vx, vy);
+    velocity.setMag(maxSpeed);
+
+    Boid boid = new Boid(position.x, position.y);
+    boid.velocity.set(velocity);
+    flock.addBoid(boid);
+  }
   // Initialize ControlP5
   cp5 = new ControlP5(this);
 
   // Create sliders for each parameter
-  createSlider("maxForce", maxForce, 0.01f, 0.2f, 110);
-  createSlider("maxSpeed", maxSpeed, 0.5f, 5, 160);
-  createSlider("desiredSeparation", desiredSeparation, 10, 100, 210);
-  createSlider("neighborDist", neighborDist, 20, 500, 260);
+  createSlider("maxForce", maxForce, 0.0f, 0.2f, 110);
+  createSlider("maxSpeed", maxSpeed, 0.0f, 5, 160);
+  createSlider("desiredSeparation", desiredSeparation, 0.0f, 100, 210);
+  createSlider("neighborDist", neighborDist, 0.0f, 500, 260);
   createSlider("separationWeight", separationWeight, 0.0f, 2.5f, 310);
   createSlider("alignmentWeight", alignmentWeight, 0.0f, 2.5f, 360);
   createSlider("cohesionWeight", cohesionWeight, 0.0f, 2.5f, 410);
@@ -85,7 +100,7 @@ void setup() {
 
 void createSlider(String name, float value, float min, float max, int yOffset) {
   cp5.addSlider(name)
-    .setPosition(width / 2 - 200, yOffset)
+    .setPosition(width / 2 - 150, yOffset)
     .setSize(200, 20)
     .setRange(min, max)
     .setValue(value)

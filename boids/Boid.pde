@@ -430,7 +430,7 @@ class Boid {
     //}
 
     float edgeRepelRange = 100; // Range from edge where repulsion force starts
-    float edgeRepelStrength = 0.1; // Strength of the repulsion force
+    float edgeRepelStrength = 0.03; // Strength of the repulsion force
 
     // Apply edge repulsion forces
     if (position.x > width - edgeRepelRange) {
