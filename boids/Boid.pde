@@ -147,7 +147,7 @@ class Boid {
   PVector separate(ArrayList<Boid> neighbors, Boid leader) {
     PVector steer = new PVector(0, 0); // Initialize the steering vector
     PVector leaderInfluence = new PVector(0, 0); // Influence of the leader
-    int count = 0;  // Number of boids that are too close
+    float count = 0;  // Number of boids that are too close
 
     // Loop through all neighbors
     for (Boid other : neighbors) {
@@ -175,12 +175,13 @@ class Boid {
         diff.normalize(); // Normalize to get direction
         diff.div(d);      // Weight by distance
         leaderInfluence = PVector.mult(diff, leaderInfluenceWeightSeparate);  // Apply leader influence weight
+        count += leaderInfluenceWeightSeparate;
       }
     }
 
     // Average the steering vector by the number of close boids
     if (count > 0) {
-      steer.div((float) count);
+      steer.div(count);
     }
 
     // As long as the steering vector is non-zero
@@ -188,7 +189,6 @@ class Boid {
       steer.normalize();
       steer.mult(maxSpeed);  // Set magnitude to maximum speed
       steer.sub(velocity);     // Subtract current velocity to get the steering force
-      steer.limit(maxForce);   // Limit to maximum steering force
     }
 
     // Combine leader influence if present
@@ -198,10 +198,13 @@ class Boid {
         steer.add(leaderInfluence); // Add leader's influence without limiting
         steer.limit(maxForce*(leaderInfluenceWeightSeparate / separationWeight));
       } else {
+        steer.limit(maxForce);   // Limit to maximum steering force
         leaderInfluence.sub(velocity);
         steer.add(leaderInfluence); // Combine with neighbors' steering
         steer.limit(maxForce); // Limit leader steering force
       }
+    } else {
+       steer.limit(maxForce); // Limit leader steering force
     }
 
     return steer; // Return the calculated steering force
@@ -213,7 +216,7 @@ class Boid {
   PVector align(ArrayList<Boid> neighbors, Boid leader) {
     PVector sum = new PVector(0, 0); // Sum of all the velocities
     PVector leaderInfluence = new PVector(0, 0); // Influence of the leader's velocity
-    int count = 0;  // Number of boids that are neighbors
+    float count = 0;  // Number of boids that are neighbors
 
     // Loop through all neighbors
     for (Boid other : neighbors) {
@@ -235,7 +238,6 @@ class Boid {
       sum.div((float) count);   // Average the velocity of neighbors
       sum.setMag(maxSpeed);     // Set magnitude to maximum speed for neighbors' influence
       PVector steer = PVector.sub(sum, velocity); // Calculate steering force from neighbors
-      steer.limit(maxForce);
 
       if (leader != null && leaderInfluence.mag() > 0) {
         if (OVERRIDE_LIMITS_FOR_LEADER_INFLUENCE) {
@@ -245,12 +247,15 @@ class Boid {
           combined.limit(maxForce*(leaderInfluenceWeightAlign / alignmentWeight));    // Limit to maximum steering force for neighbors
           return combined;
         } else {
+          steer.limit(maxForce);
           leaderInfluence.setMag(maxSpeed); // Set leader influence magnitude to max speed
           PVector leaderSteer = PVector.sub(leaderInfluence, velocity); // Calculate leader steering force
           PVector combined = PVector.add(steer, leaderSteer); // Combine with neighbors' steering
           combined.limit(maxForce);
           return combined;
         }
+      } else {
+       steer.limit(maxForce); 
       }
 
       return steer; // Return the calculated steering force
@@ -263,7 +268,7 @@ class Boid {
   PVector cohere(ArrayList<Boid> neighbors, Boid leader) {
     PVector sum = new PVector(0, 0); // Sum of all positions
     PVector leaderInfluence = new PVector(0, 0); // Influence of the leader's position
-    int count = 0;  // Number of boids that are neighbors
+    float count = 0;  // Number of boids that are neighbors
 
     // Loop through all neighbors
     for (Boid other : neighbors) {
@@ -276,17 +281,15 @@ class Boid {
     // If a leader is found and within neighbor range, add its influence
     if (leader != null) {
       if (inSight(leader)) {
-        for (int i = 0; i <= leaderInfluenceWeightCohere; i++) {
-          leaderInfluence = leader.position; // Apply leader influence weight
-          count ++;
-        }
+          leaderInfluence = PVector.mult(leader.position, leaderInfluenceWeightCohere); // Apply leader influence weight
+          count += leaderInfluenceWeightCohere;
       }
     }
 
     if (count > 0) {
       sum.div((float) count); // Average position of neighbors
       PVector steer = seek(sum); // Steering force towards average position
-      steer.limit(maxForce);
+      
 
       if (leader != null && leaderInfluence.mag() > 0) {
         if (OVERRIDE_LIMITS_FOR_LEADER_INFLUENCE) {
@@ -295,11 +298,14 @@ class Boid {
           combined.limit(maxForce*(leaderInfluenceWeightCohere / cohesionWeight));
           return combined;
         } else {
+          steer.limit(maxForce);
           PVector leaderSteer = seek(leaderInfluence); // Steering force towards leader's influenced position
           PVector combined = PVector.add(steer, leaderSteer); // Combine with neighbors' steering
           combined.limit(maxForce);
           return combined;
         }
+      } else {
+       steer.limit(maxForce); 
       }
 
       return steer; // Return the calculated steering force

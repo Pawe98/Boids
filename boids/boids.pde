@@ -26,7 +26,7 @@ float maxSpeed = 2;     // Maximum speed
 float fov = 270;
 float desiredSeparation = 55.0f; // Desired separation between boids
 float neighborDist = 150.0f; // Distance to consider boids as neighbors
-float separationWeight = 2.5f; // Weight for separation force
+float separationWeight = 1.5f; // Weight for separation force
 float alignmentWeight = 1.0f; // Weight for alignment force
 float cohesionWeight = 1.0f; // Weight for cohesion force
 float boidSize = 3; // Size of the boid
@@ -37,10 +37,10 @@ float boidSize = 3; // Size of the boid
 
 
 
-float leaderInfluenceWeightSeparate = 1.5f; // Weight for leader's influence
-float leaderInfluenceWeightAlign = 1.0f; // Weight for leader's influence
-float leaderInfluenceWeightCohere = 1.0f; // Weight for leader's influence
-float leaderInfluenceWeightChase = 1.0f; // Weight on how much the leader is chased
+float leaderInfluenceWeightSeparate = 3.0f; // Weight for leader's influence
+float leaderInfluenceWeightAlign = 2.0f; // Weight for leader's influence
+float leaderInfluenceWeightCohere = 2.0f; // Weight for leader's influence
+float leaderInfluenceWeightChase = 0.0f; // Weight on how much the leader is chased
 
 Boid controlledLeader = new Boid(0, 0);
 boolean isControlled = false;
