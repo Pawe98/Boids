@@ -55,7 +55,7 @@ class Boid {
       leader = findClosestLeader(boids);
     }
 
-    ArrayList<Boid> neighbors = getNeighbors(boids, neighborDist);
+    ArrayList<Boid> neighbors = getNeighbors(boids);
 
     PVector separation = separate(neighbors, leader);
     PVector alignment = align(neighbors, leader);
@@ -84,7 +84,7 @@ class Boid {
     for (Boid other : boids) {
       if (other.isLeader) {
         float d = PVector.dist(position, other.position);
-        if (d < closestDist) {
+        if (inSight(other) && d < closestDist) {
           closestDist = d;
           closestLeader = other;
         }
@@ -94,11 +94,23 @@ class Boid {
     return closestLeader;
   }
 
-  ArrayList<Boid> getNeighbors(ArrayList<Boid> boids, float radius) {
+  boolean inSight(Boid boid) {
+    float d = PVector.dist(position, boid.position);
+    if (d > 0 && d < neighborDist) {
+      PVector toOther = PVector.sub(boid.position, position);
+      float angle = PVector.angleBetween(velocity, toOther);
+      if (degrees(angle) < fov / 2) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  ArrayList<Boid> getNeighbors(ArrayList<Boid> boids) {
     ArrayList<Boid> neighbors = new ArrayList<Boid>();
     for (Boid other : boids) {
       float d = PVector.dist(position, other.position);
-      if ((d > 0) && (d < radius)) {
+      if (d > 0 && d < neighborDist) {
         neighbors.add(other);
       }
     }
@@ -108,7 +120,7 @@ class Boid {
   PVector chase(ArrayList<Boid> boids, Boid leader) {
     if (leader != null) {
       float d = position.dist(leader.position);
-      if ((d > 0) && (d < neighborDist) && (d > desiredSeparation)) {
+      if (inSight(leader)) {
         // Add a component to steer towards the leader's position
         PVector desired = PVector.sub(leader.position, position);
 
@@ -182,11 +194,13 @@ class Boid {
     // Combine leader influence if present
     if (leader != null && leaderInfluence.mag() > 0) {
       if (OVERRIDE_LIMITS_FOR_LEADER_INFLUENCE) {
-        leaderInfluence.limit(maxForce*(leaderInfluenceWeightSeparate / separationWeight));
+        leaderInfluence.sub(velocity);
         steer.add(leaderInfluence); // Add leader's influence without limiting
+        steer.limit(maxForce*(leaderInfluenceWeightSeparate / separationWeight));
       } else {
-        leaderInfluence.limit(maxForce); // Limit leader steering force
+        leaderInfluence.sub(velocity);
         steer.add(leaderInfluence); // Combine with neighbors' steering
+        steer.limit(maxForce); // Limit leader steering force
       }
     }
 
@@ -203,7 +217,7 @@ class Boid {
 
     // Loop through all neighbors
     for (Boid other : neighbors) {
-      if (other != leader) {
+      if (other != leader && inSight(other)) {
         sum.add(other.velocity); // Add the velocity
         count++; // Increment count of neighboring boids
       }
@@ -211,8 +225,7 @@ class Boid {
 
     // If a leader is found and within neighbor range, add its influence
     if (leader != null) {
-      float d = position.dist(leader.position);
-      if ((d > 0) && (d < neighborDist)) {
+      if (inSight(leader)) {
         leaderInfluence = PVector.mult(leader.velocity, leaderInfluenceWeightAlign); // Apply leader influence weight
         count += leaderInfluenceWeightAlign;
       }
@@ -222,20 +235,20 @@ class Boid {
       sum.div((float) count);   // Average the velocity of neighbors
       sum.setMag(maxSpeed);     // Set magnitude to maximum speed for neighbors' influence
       PVector steer = PVector.sub(sum, velocity); // Calculate steering force from neighbors
-      steer.limit(maxForce);    // Limit to maximum steering force for neighbors
+      steer.limit(maxForce);
 
       if (leader != null && leaderInfluence.mag() > 0) {
         if (OVERRIDE_LIMITS_FOR_LEADER_INFLUENCE) {
           leaderInfluence.setMag(maxSpeed); // Set leader influence magnitude to max speed
           PVector leaderSteer = PVector.sub(leaderInfluence, velocity); // Calculate leader steering force
-          leaderSteer.limit(maxForce*(leaderInfluenceWeightAlign / alignmentWeight)); // Limit leader steering force
           PVector combined = PVector.add(steer, leaderSteer); // Combine with neighbors' steering
+          combined.limit(maxForce*(leaderInfluenceWeightAlign / alignmentWeight));    // Limit to maximum steering force for neighbors
           return combined;
         } else {
           leaderInfluence.setMag(maxSpeed); // Set leader influence magnitude to max speed
           PVector leaderSteer = PVector.sub(leaderInfluence, velocity); // Calculate leader steering force
-          leaderSteer.limit(maxForce); // Limit leader steering force
           PVector combined = PVector.add(steer, leaderSteer); // Combine with neighbors' steering
+          combined.limit(maxForce);
           return combined;
         }
       }
@@ -254,7 +267,7 @@ class Boid {
 
     // Loop through all neighbors
     for (Boid other : neighbors) {
-      if (other != leader) {
+      if (other != leader && inSight(other)) {
         sum.add(other.position); // Add the position
         count++; // Increment count of neighboring boids
       }
@@ -262,10 +275,11 @@ class Boid {
 
     // If a leader is found and within neighbor range, add its influence
     if (leader != null) {
-      float d = position.dist(leader.position);
-      if ((d > 0) && (d < neighborDist)) {
-        leaderInfluence = PVector.mult(leader.position, leaderInfluenceWeightCohere); // Apply leader influence weight
-        count += leaderInfluenceWeightCohere;
+      if (inSight(leader)) {
+        for (int i = 0; i <= leaderInfluenceWeightCohere; i++) {
+          leaderInfluence = leader.position; // Apply leader influence weight
+          count ++;
+        }
       }
     }
 
@@ -277,12 +291,14 @@ class Boid {
       if (leader != null && leaderInfluence.mag() > 0) {
         if (OVERRIDE_LIMITS_FOR_LEADER_INFLUENCE) {
           PVector leaderSteer = seek(leaderInfluence); // Steering force towards leader's influenced position
-          leaderSteer.limit(maxForce*(leaderInfluenceWeightCohere / cohesionWeight));
-          return PVector.add(steer, leaderSteer); // Combine without limiting leader's influence
+          PVector combined = PVector.add(steer, leaderSteer); // Combine without limiting leader's influence
+          combined.limit(maxForce*(leaderInfluenceWeightCohere / cohesionWeight));
+          return combined;
         } else {
           PVector leaderSteer = seek(leaderInfluence); // Steering force towards leader's influenced position
-          leaderSteer.limit(maxForce); // Limit leader steering force
-          return PVector.add(steer, leaderSteer); // Combine with neighbors' steering
+          PVector combined = PVector.add(steer, leaderSteer); // Combine with neighbors' steering
+          combined.limit(maxForce);
+          return combined;
         }
       }
 
@@ -336,19 +352,47 @@ class Boid {
     context.popMatrix();
 
     if (debug) {
-      // Display detection radii
+      drawFOVCone(context, neighborDist);
       context.noFill();
       context.stroke(255, 0, 0);
       context.ellipse(position.x, position.y, desiredSeparation * 2, desiredSeparation * 2); // Separation radius
-      context.stroke(0, 255, 0);
-      context.ellipse(position.x, position.y, neighborDist * 2, neighborDist * 2); // Neighbor radius
     }
 
-    if (influences && isLeader) {
+    if (influences) {
       // Show influence lines
       showInfluences(context, boids);
     }
   }
+
+  void drawFOVCone(PGraphics context, float radius) {
+    // Calculate the angle in radians
+    float halfFOV = radians(fov / 2);
+    float angle = velocity.heading(); // Angle of the boid's velocity vector
+
+    // Calculate the start and end angles for the arc
+    float startAngle = angle - halfFOV;
+    float endAngle = angle + halfFOV;
+
+    // Set fill color with transparency (alpha)
+    context.noFill(); // Green with alpha 100
+    context.stroke(0,255,0, 100);
+
+    // Begin drawing the shape
+    context.beginShape();
+    context.vertex(position.x, position.y); // Start at the boid's position
+
+    // Draw vertices around the arc
+    for (float a = startAngle; a <= endAngle; a += 0.05) { // Increment angle in small steps
+      float x = position.x + cos(a) * radius;
+      float y = position.y + sin(a) * radius;
+      context.vertex(x, y);
+    }
+
+    // Close the shape by connecting back to the boid's position
+    context.vertex(position.x, position.y);
+    context.endShape(CLOSE);
+  }
+
 
   void drawVector(PGraphics context, PVector v, float scayl) {
     context.pushMatrix();
@@ -364,7 +408,7 @@ class Boid {
       float d = PVector.dist(position, other.position);
 
       //// Alignment & Cohecion influence
-      if ((d > 0) && (d < neighborDist)) {
+      if ((d > 0) && (d < neighborDist) && inSight(other) && other.isLeader) {
         context.stroke(0, 255, 0, map(d, 0, neighborDist, 255, 0)); // Green with intensity based on distance
         context.strokeWeight(map(d, 0, neighborDist, 5, 0));
         drawVector(context, PVector.sub(other.position, position), 1.0f);
@@ -375,7 +419,7 @@ class Boid {
       float d = PVector.dist(position, other.position);
 
       // Separation influence
-      if ((d > 0) && (d < desiredSeparation)) {
+      if ((d > 0) && (d < desiredSeparation) && other.isLeader) {
         context.stroke(255, 0, 0, map(d, 0, desiredSeparation, 255, 0)); // Red with intensity based on distance
         context.strokeWeight(map(d, 0, desiredSeparation, 15, 0));
         drawVector(context, PVector.sub(other.position, position), 1.0f);
@@ -384,51 +428,8 @@ class Boid {
     context.strokeWeight(1);
   }
 
-  // Wrap around the edges of the window
-  //TODO DOES NOT WORK BUT IS EASILY FIXABLE. JUST RETURN THE CLONE and delete the original once the clone enters, or delete the clone if the original boid reenters without leaving the screen.
+
   void edges() {
-    //float bufferZone = max(desiredSeparation, neighborDist); // Use the larger of desiredSeparation and neighborDist for buffer zone
-
-    //boolean inBufferZoneXRight = false;
-    //boolean inBufferZoneXLeft = false;
-    //boolean inBufferZoneYDown = false;
-    //boolean inBufferZoneYUp = false;
-
-    //// Check horizontal wrapping and manage duplication
-    //if (position.x > width - bufferZone) {
-    //  inBufferZoneXRight = true;
-    //} else if (position.x < bufferZone) {
-    //  inBufferZoneXLeft = true;
-    //}
-
-    //// Check vertical wrapping and manage duplication
-    //if (position.y > height - bufferZone) {
-    //  inBufferZoneYDown = true;
-    //} else if (position.y < bufferZone) {
-    //  inBufferZoneYUp = true;
-    //}
-
-    //// If the boid is in a buffer zone, duplicate it into the corresponding buffer zone
-    //if (inBufferZoneXRight || inBufferZoneXLeft || inBufferZoneYDown || inBufferZoneYUp) {
-
-    //  if (inBufferZoneXRight) {
-    //    inBufferZoneXRight = false; // Reset the buffer zone flag
-    //    duplicated = true;
-    //  } else if (inBufferZoneXLeft) {
-    //    inBufferZoneXLeft = false; // Reset the buffer zone flag
-    //    duplicated = true;
-    //  }
-
-    //  if (inBufferZoneYDown) {
-    //    inBufferZoneYDown = false; // Reset the buffer zone flag
-    //    duplicated = true;
-    //  } else if (inBufferZoneYUp) {
-    //    inBufferZoneYUp = false; // Reset the buffer zone flag
-    //    duplicated = true;
-    //  }
-
-    //}
-
     float edgeRepelRange = 100; // Range from edge where repulsion force starts
     float edgeRepelStrength = 0.03; // Strength of the repulsion force
 

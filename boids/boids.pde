@@ -17,12 +17,13 @@ float circleRadius;
 float angle = 0; // Angle to determine the position on the circle
 
 // Static constants
-public static final int NUM_BOIDS = 100;
+public static final int NUM_BOIDS = 25;
 public static final boolean OVERRIDE_LIMITS_FOR_LEADER_INFLUENCE = true;
 
 // These will be adjustable via sliders
 float maxForce = 0.03f; // Maximum steering force
 float maxSpeed = 2;     // Maximum speed
+float fov = 270;
 float desiredSeparation = 55.0f; // Desired separation between boids
 float neighborDist = 150.0f; // Distance to consider boids as neighbors
 float separationWeight = 2.5f; // Weight for separation force
@@ -54,7 +55,7 @@ void setup() {
   flock = new Flock();  // Create a new flock
 
   circleCenter = new PVector(width / 2, height / 2);
-  circleRadius = 300;
+  circleRadius = 200;
   for (int i = 0; i < NUM_BOIDS; i++) {
     float angle = map(i, 0, NUM_BOIDS, 0, TWO_PI);
     float x = circleCenter.x + circleRadius * cos(angle);
@@ -79,9 +80,9 @@ void setup() {
   createSlider("maxSpeed", maxSpeed, 0.0f, 5, 160);
   createSlider("desiredSeparation", desiredSeparation, 0.0f, 100, 210);
   createSlider("neighborDist", neighborDist, 0.0f, 500, 260);
-  createSlider("separationWeight", separationWeight, 0.0f, 2.5f, 310);
-  createSlider("alignmentWeight", alignmentWeight, 0.0f, 2.5f, 360);
-  createSlider("cohesionWeight", cohesionWeight, 0.0f, 2.5f, 410);
+  createSlider("separationWeight", separationWeight, 0.0f, 5.0f, 310);
+  createSlider("alignmentWeight", alignmentWeight, 0.0f, 5.0f, 360);
+  createSlider("cohesionWeight", cohesionWeight, 0.0f, 5.0f, 410);
   createSlider("boidSize", boidSize, 1, 10, 460);
   createSlider("leaderInfluenceWeightSeparate", leaderInfluenceWeightSeparate, 0.0f, 20.0f, 510);
   createSlider("leaderInfluenceWeightAlign", leaderInfluenceWeightAlign, 0.0f, 20.0f, 560);
