@@ -93,21 +93,21 @@ void setup() {
   cp5 = new ControlP5(this);
 
   // Create sliders for each parameter
-  createSlider("maxForce", maxForce, 0.0f, 0.2f, 110);
-  createSlider("maxSpeed", maxSpeed, 0.0f, 5, 160);
-  createSlider("desiredSeparation", desiredSeparation, 0.0f, 100, 210);
-  createSlider("neighborDist", neighborDist, 0.0f, 500, 260);
-  createSlider("separationWeight", separationWeight, 0.0f, 5.0f, 310);
-  createSlider("alignmentWeight", alignmentWeight, 0.0f, 5.0f, 360);
-  createSlider("cohesionWeight", cohesionWeight, 0.0f, 5.0f, 410);
-  createSlider("boidSize", boidSize, 1, 10, 460);
-  createSlider("leaderInfluenceWeightSeparate", leaderInfluenceWeightSeparate, 0.0f, 50.0f, 510);
-  createSlider("leaderInfluenceWeightAlign", leaderInfluenceWeightAlign, 0.0f, 50.0f, 560);
-  createSlider("leaderInfluenceWeightCohere", leaderInfluenceWeightCohere, 0.0f, 50.0f, 610);
-  createSlider("leaderInfluenceWeightChase", leaderInfluenceWeightChase, 0.0f, 20.0f, 660);
-
-  // Create checkbox for isControlled
-  createCheckBox("isControlled", isControlled, 710);
+  createSlider("maxForce", maxForce, 0.0f, 0.2f, 60);
+  createSlider("maxSpeed", maxSpeed, 0.0f, 5, 110);
+  createSlider("desiredSeparation", desiredSeparation, 0.0f, 100, 160);
+  createSlider("viewRange", neighborDist, 0.0f, 500, 210);
+  createSlider("FOV", fov, 1, 360, 260);
+  createSlider("boidSize", boidSize, 1, 10, 310);
+  
+  createSlider("separationWeight", separationWeight, 0.0f, 5.0f, 380);
+  createSlider("alignmentWeight", alignmentWeight, 0.0f, 5.0f, 430);
+  createSlider("cohesionWeight", cohesionWeight, 0.0f, 5.0f, 480);
+  
+  createSlider("leaderInfluenceWeightSeparate", leaderInfluenceWeightSeparate, 0.0f, 50.0f, 550);
+  createSlider("leaderInfluenceWeightAlign", leaderInfluenceWeightAlign, 0.0f, 50.0f, 600);
+  createSlider("leaderInfluenceWeightCohere", leaderInfluenceWeightCohere, 0.0f, 50.0f, 650);
+  createSlider("leaderInfluenceWeightChase", leaderInfluenceWeightChase, 0.0f, 20.0f, 700);
 
 
   hideMenu(); // Start with sliders hidden
@@ -190,11 +190,14 @@ void draw() {
     maxForce = cp5.getController("maxForce").getValue();
     maxSpeed = cp5.getController("maxSpeed").getValue();
     desiredSeparation = cp5.getController("desiredSeparation").getValue();
-    neighborDist = cp5.getController("neighborDist").getValue();
+    neighborDist = cp5.getController("viewRange").getValue();
+    fov = cp5.getController("FOV").getValue();
+    boidSize = cp5.getController("boidSize").getValue();
+    
     separationWeight = cp5.getController("separationWeight").getValue();
     alignmentWeight = cp5.getController("alignmentWeight").getValue();
     cohesionWeight = cp5.getController("cohesionWeight").getValue();
-    boidSize = cp5.getController("boidSize").getValue();
+    
     leaderInfluenceWeightSeparate = cp5.getController("leaderInfluenceWeightSeparate").getValue();
     leaderInfluenceWeightAlign = cp5.getController("leaderInfluenceWeightAlign").getValue();
     leaderInfluenceWeightCohere = cp5.getController("leaderInfluenceWeightCohere").getValue();
@@ -243,7 +246,8 @@ void showMenu() {
   cp5.getController("maxForce").show();
   cp5.getController("maxSpeed").show();
   cp5.getController("desiredSeparation").show();
-  cp5.getController("neighborDist").show();
+  cp5.getController("viewRange").show();
+  cp5.getController("FOV").show();
   cp5.getController("separationWeight").show();
   cp5.getController("alignmentWeight").show();
   cp5.getController("cohesionWeight").show();
@@ -252,14 +256,14 @@ void showMenu() {
   cp5.getController("leaderInfluenceWeightAlign").show();
   cp5.getController("leaderInfluenceWeightCohere").show();
   cp5.getController("leaderInfluenceWeightChase").show();
-  cp5.getController("isControlled").show();
 }
 
 void hideMenu() {
   cp5.getController("maxForce").hide();
   cp5.getController("maxSpeed").hide();
   cp5.getController("desiredSeparation").hide();
-  cp5.getController("neighborDist").hide();
+  cp5.getController("viewRange").hide();
+  cp5.getController("FOV").hide();
   cp5.getController("separationWeight").hide();
   cp5.getController("alignmentWeight").hide();
   cp5.getController("cohesionWeight").hide();
@@ -268,7 +272,6 @@ void hideMenu() {
   cp5.getController("leaderInfluenceWeightAlign").hide();
   cp5.getController("leaderInfluenceWeightCohere").hide();
   cp5.getController("leaderInfluenceWeightChase").hide();
-  cp5.getController("isControlled").hide();
 }
 
 void keyPressed() {
@@ -292,7 +295,6 @@ void keyPressed() {
 
   if (key == 'c') {
     isControlled = !isControlled;
-    cp5.getController("isControlled").changeValue(isControlled ? 1 : 0);
   }
   
   if (key == ' ') { 
