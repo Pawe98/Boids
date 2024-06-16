@@ -11,8 +11,8 @@ class Camera extends PApplet {
   int startTime;
   int cameraWindowX = 800;  // X-Position des Kamera-Fensters
   int cameraWindowY = 100;  // Y-Position des Kamera-Fensters
-  int cameraWindowWidth = 640;  // Breite des Kamera-Fensters
-  int cameraWindowHeight = 480;  // Höhe des Kamera-Fensters
+  int cameraWindowWidth = 400;  // Breite des Kamera-Fensters
+  int cameraWindowHeight = 400;  // Höhe des Kamera-Fensters
 
 
   public Camera(PGraphics pg, Flock flock, Boid target) {
@@ -24,7 +24,7 @@ class Camera extends PApplet {
   }
 
   public void settings() {
-    size(400, 400);
+    size(cameraWindowWidth, cameraWindowHeight);
   }
 
   public void setup() {
