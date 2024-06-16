@@ -1,4 +1,5 @@
 import controlP5.*;
+import g4p_controls.*;
 
 Camera cam;
 PGraphics camBuffer;
@@ -16,6 +17,11 @@ float circleRadius;
 
 float angle = 0; // Angle to determine the position on the circle
 
+GButton playPauseButton;
+boolean isPlaying = true;
+
+int frameCounter;
+
 // Static constants
 public static final int NUM_BOIDS = 64;
 public static final boolean OVERRIDE_LIMITS_FOR_LEADER_INFLUENCE = false;
@@ -32,8 +38,6 @@ float cohesionWeight = 1.0f; // Weight for cohesion force
 float boidSize = 3; // Size of the boid
 
 //TODO ADD FOV SLIDER
-//TODO ADD PLAY/PAUSE
-//TODO ADD FRAMECOUNTER to bottom of view
 
 
 
@@ -76,6 +80,7 @@ void setup() {
     boid.velocity.set(velocity);
     flock.addBoid(boid);
   }
+
   // Initialize ControlP5
   cp5 = new ControlP5(this);
 
@@ -101,6 +106,15 @@ void setup() {
 
   camBuffer = createGraphics(400, 400);  // Create the off-screen buffer
   cam = new Camera(camBuffer, flock, controlledLeader);
+
+  int buttonWidth = 80;
+  int buttonHeight = 30;
+  int xPosition = width - buttonWidth - 10; // 10 pixels from the right edge
+  int yPosition = 10; // 10 pixels from the top edge
+  playPauseButton = new GButton(this, xPosition, yPosition, buttonWidth, buttonHeight, "Pause");
+  playPauseButton.addEventHandler(this, "handleButtonEvents");
+
+  frameCounter = 0;
 }
 
 void createSlider(String name, float value, float min, float max, int yOffset) {
@@ -127,74 +141,88 @@ void createCheckBox(String name, boolean value, int yOffset) {
 }
 
 void draw() {
-  controlledLeader.isControlled = isControlled;
-  background(51);  // Clear the background
-  flock.run();     // Run the flock simulation
-  flock.display(this.g);
+  if (isPlaying) {
+    controlledLeader.isControlled = isControlled;
+    background(51);  // Clear the background
+    flock.run();     // Run the flock simulation
+    flock.display(this.g);
 
-  if (controlledLeader.isControlled)
-    controlledLeader.position.set(mouseX, mouseY);
+    if (controlledLeader.isControlled)
+      controlledLeader.position.set(mouseX, mouseY);
 
-  if (leftClicked && circleCenter != null&& !showMenu) {
-    circleRadius = dist(circleCenter.x, circleCenter.y, mouseX, mouseY);
+    if (leftClicked && circleCenter != null&& !showMenu) {
+      circleRadius = dist(circleCenter.x, circleCenter.y, mouseX, mouseY);
+    }
+
+    if (circleCenter != null && circleRadius > 0f) {
+      processCircle(controlledLeader);
+      drawCircle(this.g);
+    }
+
+    // Check for mouse hover over the dropdown background
+    if (mouseX >= width / 2 - 20 && mouseX <= width / 2 + 20 && mouseY <= 40) {
+      showMenu = true;
+    } else if (!mouseOverDropdownArea()) {
+      showMenu = false;
+    }
+
+    if (showMenu) {
+
+      showMenu();
+    } else {
+      // Draw the dropdown arrow
+      fill(255);
+      noStroke();
+      triangle(width / 2 - 10, 10, width / 2 + 10, 10, width / 2, 30);
+
+      hideMenu();
+    }
+
+
+    // Update Boid properties with slider values
+    maxForce = cp5.getController("maxForce").getValue();
+    maxSpeed = cp5.getController("maxSpeed").getValue();
+    desiredSeparation = cp5.getController("desiredSeparation").getValue();
+    neighborDist = cp5.getController("neighborDist").getValue();
+    separationWeight = cp5.getController("separationWeight").getValue();
+    alignmentWeight = cp5.getController("alignmentWeight").getValue();
+    cohesionWeight = cp5.getController("cohesionWeight").getValue();
+    boidSize = cp5.getController("boidSize").getValue();
+    leaderInfluenceWeightSeparate = cp5.getController("leaderInfluenceWeightSeparate").getValue();
+    leaderInfluenceWeightAlign = cp5.getController("leaderInfluenceWeightAlign").getValue();
+    leaderInfluenceWeightCohere = cp5.getController("leaderInfluenceWeightCohere").getValue();
+    leaderInfluenceWeightChase = cp5.getController("leaderInfluenceWeightChase").getValue();
+
+    // Update camBuffer for the camera view
+    camBuffer.beginDraw();
+    camBuffer.background(51);  // Clear the buffer background
+    camBuffer.pushMatrix();
+    camBuffer.translate(camBuffer.width / 2 - controlledLeader.position.x, camBuffer.height / 2 - controlledLeader.position.y);
+    flock.display(camBuffer);
+    if (circleCenter != null && circleRadius > 0f) {
+      drawCircle(camBuffer);
+    }
+    camBuffer.popMatrix();
+    camBuffer.endDraw();
+
+    displayInfo();
+    frameCounter++;
+    fill(255);  // Set text color to white
+    textSize(16);  // Set text size
+    text("Frame: " + frameCounter, 10, 40);
   }
-
-  if (circleCenter != null && circleRadius > 0f) {
-    processCircle(controlledLeader);
-    drawCircle(this.g);
-  }
-
-  // Check for mouse hover over the dropdown background
-  if (mouseX >= width / 2 - 20 && mouseX <= width / 2 + 20 && mouseY <= 40) {
-    showMenu = true;
-  } else if (!mouseOverDropdownArea()) {
-    showMenu = false;
-  }
-
-  if (showMenu) {
-
-    showMenu();
-  } else {
-    // Draw the dropdown arrow
-    fill(255);
-    noStroke();
-    triangle(width / 2 - 10, 10, width / 2 + 10, 10, width / 2, 30);
-
-    hideMenu();
-  }
-
-
-  // Update Boid properties with slider values
-  maxForce = cp5.getController("maxForce").getValue();
-  maxSpeed = cp5.getController("maxSpeed").getValue();
-  desiredSeparation = cp5.getController("desiredSeparation").getValue();
-  neighborDist = cp5.getController("neighborDist").getValue();
-  separationWeight = cp5.getController("separationWeight").getValue();
-  alignmentWeight = cp5.getController("alignmentWeight").getValue();
-  cohesionWeight = cp5.getController("cohesionWeight").getValue();
-  boidSize = cp5.getController("boidSize").getValue();
-  leaderInfluenceWeightSeparate = cp5.getController("leaderInfluenceWeightSeparate").getValue();
-  leaderInfluenceWeightAlign = cp5.getController("leaderInfluenceWeightAlign").getValue();
-  leaderInfluenceWeightCohere = cp5.getController("leaderInfluenceWeightCohere").getValue();
-  leaderInfluenceWeightChase = cp5.getController("leaderInfluenceWeightChase").getValue();
-
-  // Update camBuffer for the camera view
-  camBuffer.beginDraw();
-  camBuffer.background(51);  // Clear the buffer background
-  camBuffer.pushMatrix();
-  camBuffer.translate(camBuffer.width / 2 - controlledLeader.position.x, camBuffer.height / 2 - controlledLeader.position.y);
-  flock.display(camBuffer);
-  if (circleCenter != null && circleRadius > 0f) {
-    drawCircle(camBuffer);
-  }
-  camBuffer.popMatrix();
-  camBuffer.endDraw();
-
-  displayInfo();
 }
 
 boolean mouseOverDropdownArea() {
   return (mouseX >= width / 2 - 200 && mouseX <= width / 2 + 200 && mouseY <= 800);
+}
+
+// Handle button events
+public void handleButtonEvents(GButton button, GEvent event) {
+  if (button == playPauseButton && event == GEvent.CLICKED) {
+    isPlaying = !isPlaying;
+    playPauseButton.setText(isPlaying ? "Pause" : "Play");
+  }
 }
 
 void showMenu() {
