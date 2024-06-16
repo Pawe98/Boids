@@ -129,14 +129,15 @@ class Boid {
 
         desired.normalize();
         desired.mult(maxSpeed * scale); // Scale the desired velocity
-        PVector steerTowardsLeader = PVector.sub(desired, velocity);
-        steerTowardsLeader.limit(maxForce * scale); // Scale the steering force
+        
 
         //fill(255, 0, 0);
         //ellipse(position.x + steerTowardsLeader.x * 1000, position.y + steerTowardsLeader.y * 1000, 20, 20);
 
         PVector separationForce = separate(boids, leader);
+        PVector steerTowardsLeader = PVector.sub(desired, velocity);
         steerTowardsLeader.add(separationForce);
+        //steerTowardsLeader.limit(maxForce); // Scale the steering force
         return steerTowardsLeader;
       }
     }

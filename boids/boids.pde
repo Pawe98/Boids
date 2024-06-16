@@ -104,10 +104,10 @@ void setup() {
   createSlider("alignmentWeight", alignmentWeight, 0.0f, 5.0f, 430);
   createSlider("cohesionWeight", cohesionWeight, 0.0f, 5.0f, 480);
   
-  createSlider("leaderInfluenceWeightSeparate", leaderInfluenceWeightSeparate, 0.0f, 50.0f, 550);
-  createSlider("leaderInfluenceWeightAlign", leaderInfluenceWeightAlign, 0.0f, 50.0f, 600);
-  createSlider("leaderInfluenceWeightCohere", leaderInfluenceWeightCohere, 0.0f, 50.0f, 650);
-  createSlider("leaderInfluenceWeightChase", leaderInfluenceWeightChase, 0.0f, 20.0f, 700);
+  createSlider("leaderInfluenceWeightSeparate", leaderInfluenceWeightSeparate, 0.0f, 100.0f, 550);
+  createSlider("leaderInfluenceWeightAlign", leaderInfluenceWeightAlign, 0.0f, 100.0f, 600);
+  createSlider("leaderInfluenceWeightCohere", leaderInfluenceWeightCohere, 0.0f, 100.0f, 650);
+  createSlider("leaderInfluenceWeightChase", leaderInfluenceWeightChase, 0.0f, 100.0f, 700);
 
 
   hideMenu(); // Start with sliders hidden
