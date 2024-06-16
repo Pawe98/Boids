@@ -18,7 +18,7 @@ float angle = 0; // Angle to determine the position on the circle
 
 // Static constants
 public static final int NUM_BOIDS = 25;
-public static final boolean OVERRIDE_LIMITS_FOR_LEADER_INFLUENCE = true;
+public static final boolean OVERRIDE_LIMITS_FOR_LEADER_INFLUENCE = false;
 
 // These will be adjustable via sliders
 float maxForce = 0.03f; // Maximum steering force
@@ -37,9 +37,9 @@ float boidSize = 3; // Size of the boid
 
 
 
-float leaderInfluenceWeightSeparate = 3.0f; // Weight for leader's influence
-float leaderInfluenceWeightAlign = 2.0f; // Weight for leader's influence
-float leaderInfluenceWeightCohere = 2.0f; // Weight for leader's influence
+float leaderInfluenceWeightSeparate = 15.0f; // Weight for leader's influence
+float leaderInfluenceWeightAlign = 10.0f; // Weight for leader's influence
+float leaderInfluenceWeightCohere = 10.0f; // Weight for leader's influence
 float leaderInfluenceWeightChase = 0.0f; // Weight on how much the leader is chased
 
 Boid controlledLeader = new Boid(0, 0);
@@ -88,9 +88,9 @@ void setup() {
   createSlider("alignmentWeight", alignmentWeight, 0.0f, 5.0f, 360);
   createSlider("cohesionWeight", cohesionWeight, 0.0f, 5.0f, 410);
   createSlider("boidSize", boidSize, 1, 10, 460);
-  createSlider("leaderInfluenceWeightSeparate", leaderInfluenceWeightSeparate, 0.0f, 20.0f, 510);
-  createSlider("leaderInfluenceWeightAlign", leaderInfluenceWeightAlign, 0.0f, 20.0f, 560);
-  createSlider("leaderInfluenceWeightCohere", leaderInfluenceWeightCohere, 0.0f, 20.0f, 610);
+  createSlider("leaderInfluenceWeightSeparate", leaderInfluenceWeightSeparate, 0.0f, 50.0f, 510);
+  createSlider("leaderInfluenceWeightAlign", leaderInfluenceWeightAlign, 0.0f, 50.0f, 560);
+  createSlider("leaderInfluenceWeightCohere", leaderInfluenceWeightCohere, 0.0f, 50.0f, 610);
   createSlider("leaderInfluenceWeightChase", leaderInfluenceWeightChase, 0.0f, 20.0f, 660);
 
   // Create checkbox for isControlled

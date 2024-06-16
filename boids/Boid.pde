@@ -146,36 +146,36 @@ class Boid {
   // Separation: Steer to avoid crowding local flockmates
   PVector separate(ArrayList<Boid> neighbors, Boid leader) {
     PVector steer = new PVector(0, 0); // Initialize the steering vector
-    PVector leaderInfluence = new PVector(0, 0); // Influence of the leader
     float count = 0;  // Number of boids that are too close
 
     // Loop through all neighbors
     for (Boid other : neighbors) {
-      if (other != leader) {
-        // Calculate distance between this boid and another boid
-        float d = position.dist(other.position);
+      // Calculate distance between this boid and another boid
+      float d = position.dist(other.position);
 
-        // If the other boid is too close
-        if ((d > 0) && (d < desiredSeparation)) {
-          // Calculate vector pointing away from the other boid
-          PVector diff = PVector.sub(position, other.position);
+      // If the other boid is too close
+      if ((d > 0) && (d < desiredSeparation)) {
+        // Calculate vector pointing away from the other boid
+        PVector diff = PVector.sub(position, other.position);
+
+
+        if (other == leader) {
           diff.normalize(); // Normalize to get direction
           diff.div(d);      // Weight by distance
-          steer.add(diff);  // Add to steering vector
-          count++; // Increment count of close boids
+          steer.add(PVector.mult(diff, leaderInfluenceWeightSeparate));  // Apply leader influence weight
+          count += leaderInfluenceWeightSeparate;
+        } else {
+          diff.normalize(); // Normalize to get direction
+          diff.div(d);      // Weight by distance
+          // IMPORTANT!:IF WE CHASE THE LEADER, WE MUST REPELL MORE ALSO OTHERS
+          if (leader != null && inSight(leader)) {
+            steer.add(PVector.mult(diff, leaderInfluenceWeightSeparate));  // Apply leader influence weight
+            count += leaderInfluenceWeightSeparate;
+          } else {
+            steer.add(diff);  // Add to steering vector
+            count++; // Increment count of close boids
+          }
         }
-      }
-    }
-
-    // If a leader is found and within separation range, add its influence
-    if (leader != null) {
-      float d = position.dist(leader.position);
-      if ((d > 0) && d < desiredSeparation) {
-        PVector diff = PVector.sub(position, leader.position);
-        diff.normalize(); // Normalize to get direction
-        diff.div(d);      // Weight by distance
-        leaderInfluence = PVector.mult(diff, leaderInfluenceWeightSeparate);  // Apply leader influence weight
-        count += leaderInfluenceWeightSeparate;
       }
     }
 
@@ -192,21 +192,13 @@ class Boid {
     }
 
     // Combine leader influence if present
-    if (leader != null && leaderInfluence.mag() > 0) {
+    if (leader != null) {
       if (OVERRIDE_LIMITS_FOR_LEADER_INFLUENCE) {
-        leaderInfluence.sub(velocity);
-        steer.add(leaderInfluence); // Add leader's influence without limiting
         steer.limit(maxForce*(leaderInfluenceWeightSeparate / separationWeight));
-      } else {
-        steer.limit(maxForce);   // Limit to maximum steering force
-        leaderInfluence.sub(velocity);
-        steer.add(leaderInfluence); // Combine with neighbors' steering
-        steer.limit(maxForce); // Limit leader steering force
+        return steer;
       }
-    } else {
-       steer.limit(maxForce); // Limit leader steering force
     }
-
+    steer.limit(maxForce);
     return steer; // Return the calculated steering force
   }
 
@@ -215,7 +207,6 @@ class Boid {
   // Alignment: Steer towards the average heading of local flockmates
   PVector align(ArrayList<Boid> neighbors, Boid leader) {
     PVector sum = new PVector(0, 0); // Sum of all the velocities
-    PVector leaderInfluence = new PVector(0, 0); // Influence of the leader's velocity
     float count = 0;  // Number of boids that are neighbors
 
     // Loop through all neighbors
@@ -229,35 +220,22 @@ class Boid {
     // If a leader is found and within neighbor range, add its influence
     if (leader != null) {
       if (inSight(leader)) {
-        leaderInfluence = PVector.mult(leader.velocity, leaderInfluenceWeightAlign); // Apply leader influence weight
+        sum.add(PVector.mult(leader.velocity, leaderInfluenceWeightAlign)); // Apply leader influence weight
         count += leaderInfluenceWeightAlign;
       }
     }
 
     if (count > 0) {
-      sum.div((float) count);   // Average the velocity of neighbors
-      sum.setMag(maxSpeed);     // Set magnitude to maximum speed for neighbors' influence
-      PVector steer = PVector.sub(sum, velocity); // Calculate steering force from neighbors
-
-      if (leader != null && leaderInfluence.mag() > 0) {
+      sum.div(count);   // Average the velocity of neighbors
+      sum.setMag(maxSpeed);
+      PVector steer = PVector.sub(sum, velocity);
+      if (leader != null) {
         if (OVERRIDE_LIMITS_FOR_LEADER_INFLUENCE) {
-          leaderInfluence.setMag(maxSpeed); // Set leader influence magnitude to max speed
-          PVector leaderSteer = PVector.sub(leaderInfluence, velocity); // Calculate leader steering force
-          PVector combined = PVector.add(steer, leaderSteer); // Combine with neighbors' steering
-          combined.limit(maxForce*(leaderInfluenceWeightAlign / alignmentWeight));    // Limit to maximum steering force for neighbors
-          return combined;
-        } else {
-          steer.limit(maxForce);
-          leaderInfluence.setMag(maxSpeed); // Set leader influence magnitude to max speed
-          PVector leaderSteer = PVector.sub(leaderInfluence, velocity); // Calculate leader steering force
-          PVector combined = PVector.add(steer, leaderSteer); // Combine with neighbors' steering
-          combined.limit(maxForce);
-          return combined;
+          steer.limit(maxForce*(leaderInfluenceWeightAlign / alignmentWeight));    // Limit to maximum steering force for neighbors
+          return steer;
         }
-      } else {
-       steer.limit(maxForce); 
       }
-
+      steer.limit(maxForce);
       return steer; // Return the calculated steering force
     } else {
       return new PVector(0, 0); // If no neighbors, return zero steering force
@@ -281,31 +259,26 @@ class Boid {
     // If a leader is found and within neighbor range, add its influence
     if (leader != null) {
       if (inSight(leader)) {
-          leaderInfluence = PVector.mult(leader.position, leaderInfluenceWeightCohere); // Apply leader influence weight
-          count += leaderInfluenceWeightCohere;
+        sum.add(PVector.mult(leader.position, leaderInfluenceWeightCohere)); // Apply leader influence weight
+        count += leaderInfluenceWeightCohere;
       }
     }
 
     if (count > 0) {
-      sum.div((float) count); // Average position of neighbors
+      sum.div(count); // Average position of neighbors
       PVector steer = seek(sum); // Steering force towards average position
-      
+
 
       if (leader != null && leaderInfluence.mag() > 0) {
         if (OVERRIDE_LIMITS_FOR_LEADER_INFLUENCE) {
-          PVector leaderSteer = seek(leaderInfluence); // Steering force towards leader's influenced position
-          PVector combined = PVector.add(steer, leaderSteer); // Combine without limiting leader's influence
-          combined.limit(maxForce*(leaderInfluenceWeightCohere / cohesionWeight));
-          return combined;
+          steer.limit(maxForce*(leaderInfluenceWeightCohere / cohesionWeight));
+          return steer;
         } else {
           steer.limit(maxForce);
-          PVector leaderSteer = seek(leaderInfluence); // Steering force towards leader's influenced position
-          PVector combined = PVector.add(steer, leaderSteer); // Combine with neighbors' steering
-          combined.limit(maxForce);
-          return combined;
+          return steer;
         }
       } else {
-       steer.limit(maxForce); 
+        steer.limit(maxForce);
       }
 
       return steer; // Return the calculated steering force
@@ -381,7 +354,7 @@ class Boid {
 
     // Set fill color with transparency (alpha)
     context.noFill(); // Green with alpha 100
-    context.stroke(0,255,0, 100);
+    context.stroke(0, 255, 0, 100);
 
     // Begin drawing the shape
     context.beginShape();
