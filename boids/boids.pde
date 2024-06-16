@@ -23,7 +23,7 @@ boolean isPlaying = true;
 int frameCounter;
 
 // Static constants
-public static final int NUM_BOIDS = 64;
+public static final int NUM_BOIDS = 128;
 public static final boolean OVERRIDE_LIMITS_FOR_LEADER_INFLUENCE = false;
 
 // These will be adjustable via sliders
@@ -35,11 +35,7 @@ float neighborDist = 105.0f; // Distance to consider boids as neighbors
 float separationWeight = 1.5f; // Weight for separation force
 float alignmentWeight = 1.0f; // Weight for alignment force
 float cohesionWeight = 1.0f; // Weight for cohesion force
-float boidSize = 3; // Size of the boid
-
-//TODO ADD FOV SLIDER
-
-
+float boidSize = 1.5; // Size of the boid
 
 float leaderInfluenceWeightSeparate = 15.0f; // Weight for leader's influence
 float leaderInfluenceWeightAlign = 10.0f; // Weight for leader's influence
