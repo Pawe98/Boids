@@ -2,7 +2,7 @@ Prerequisites
   To run the simulation, you need the following software and libraries.
 
 Required Software
-  IDE: Processing 4.3
+  IDE: Processing 4.3 (www.processing.org)
 
 Required Libraries
   controlP5: This library is used for controlling the graphical user interface.
