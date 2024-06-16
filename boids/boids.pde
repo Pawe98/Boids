@@ -17,19 +17,19 @@ float circleRadius;
 float angle = 0; // Angle to determine the position on the circle
 
 // Static constants
-public static final int NUM_BOIDS = 100;
+public static final int NUM_BOIDS = 64;
 public static final boolean OVERRIDE_LIMITS_FOR_LEADER_INFLUENCE = false;
 
 // These will be adjustable via sliders
 float maxForce = 0.03f; // Maximum steering force
-float maxSpeed = 1;     // Maximum speed
+float maxSpeed = 2;     // Maximum speed
 float fov = 270;
 float desiredSeparation = 45.0f; // Desired separation between boids
-float neighborDist = 85.0f; // Distance to consider boids as neighbors
+float neighborDist = 105.0f; // Distance to consider boids as neighbors
 float separationWeight = 1.5f; // Weight for separation force
 float alignmentWeight = 1.0f; // Weight for alignment force
 float cohesionWeight = 1.0f; // Weight for cohesion force
-float boidSize = 2; // Size of the boid
+float boidSize = 3; // Size of the boid
 
 //TODO ADD FOV SLIDER
 //TODO ADD PLAY/PAUSE
