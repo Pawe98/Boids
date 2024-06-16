@@ -143,7 +143,7 @@ void createCheckBox(String name, boolean value, int yOffset) {
 
 void draw() {
   controlledLeader.isControlled = isControlled;
-  background(51);  // Clear the background
+  background(20);  // Clear the background
 
   if (circleCenter != null && circleRadius > 0f) {
     drawCircle(this.g);
@@ -205,7 +205,7 @@ void draw() {
 
   // Update camBuffer for the camera view
   camBuffer.beginDraw();
-  camBuffer.background(51);  // Clear the buffer background
+  camBuffer.background(20);  // Clear the buffer background
   camBuffer.pushMatrix();
   camBuffer.translate(camBuffer.width / 2 - controlledLeader.position.x, camBuffer.height / 2 - controlledLeader.position.y);
   flock.display(camBuffer);
