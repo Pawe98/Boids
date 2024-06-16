@@ -51,6 +51,12 @@ boolean isControlled = false;
 
 ControlP5 cp5;
 
+//Play Pause Button
+int buttonWidth = 80;
+int buttonHeight = 30;
+int xPosition = width - buttonWidth - 10; // 10 pixels from the right edge
+int yPosition = 10; // 10 pixels from the top edge
+
 boolean showMenu = false;
 
 void setup() {
@@ -107,10 +113,7 @@ void setup() {
   camBuffer = createGraphics(400, 400);  // Create the off-screen buffer
   cam = new Camera(camBuffer, flock, controlledLeader);
 
-  int buttonWidth = 80;
-  int buttonHeight = 30;
-  int xPosition = width - buttonWidth - 10; // 10 pixels from the right edge
-  int yPosition = 10; // 10 pixels from the top edge
+
   playPauseButton = new GButton(this, xPosition, yPosition, buttonWidth, buttonHeight, "Pause");
   playPauseButton.addEventHandler(this, "handleButtonEvents");
 
@@ -141,12 +144,15 @@ void createCheckBox(String name, boolean value, int yOffset) {
 }
 
 void draw() {
-  if (isPlaying) {
-    controlledLeader.isControlled = isControlled;
-    background(51);  // Clear the background
-    flock.run();     // Run the flock simulation
-    flock.display(this.g);
+  controlledLeader.isControlled = isControlled;
+  background(51);  // Clear the background
 
+  if (circleCenter != null && circleRadius > 0f) {
+    drawCircle(this.g);
+  }
+
+  if (isPlaying) {
+    flock.run();     // Run the flock simulation
     if (controlledLeader.isControlled)
       controlledLeader.position.set(mouseX, mouseY);
 
@@ -156,7 +162,6 @@ void draw() {
 
     if (circleCenter != null && circleRadius > 0f) {
       processCircle(controlledLeader);
-      drawCircle(this.g);
     }
 
     // Check for mouse hover over the dropdown background
@@ -193,24 +198,28 @@ void draw() {
     leaderInfluenceWeightCohere = cp5.getController("leaderInfluenceWeightCohere").getValue();
     leaderInfluenceWeightChase = cp5.getController("leaderInfluenceWeightChase").getValue();
 
-    // Update camBuffer for the camera view
-    camBuffer.beginDraw();
-    camBuffer.background(51);  // Clear the buffer background
-    camBuffer.pushMatrix();
-    camBuffer.translate(camBuffer.width / 2 - controlledLeader.position.x, camBuffer.height / 2 - controlledLeader.position.y);
-    flock.display(camBuffer);
-    if (circleCenter != null && circleRadius > 0f) {
-      drawCircle(camBuffer);
-    }
-    camBuffer.popMatrix();
-    camBuffer.endDraw();
-
-    displayInfo();
     frameCounter++;
-    fill(255);  // Set text color to white
-    textSize(16);  // Set text size
-    text("Frame: " + frameCounter, 10, 40);
   }
+  flock.display(this.g);
+
+  // Update camBuffer for the camera view
+  camBuffer.beginDraw();
+  camBuffer.background(51);  // Clear the buffer background
+  camBuffer.pushMatrix();
+  camBuffer.translate(camBuffer.width / 2 - controlledLeader.position.x, camBuffer.height / 2 - controlledLeader.position.y);
+  flock.display(camBuffer);
+  if (circleCenter != null && circleRadius > 0f) {
+    drawCircle(camBuffer);
+  }
+  camBuffer.popMatrix();
+  camBuffer.endDraw();
+
+  displayInfo();
+
+
+  fill(255);  // Set text color to white
+  textSize(16);  // Set text size
+  text("Frame: " + frameCounter, 10, 40);
 }
 
 boolean mouseOverDropdownArea() {
@@ -300,9 +309,11 @@ void displayInfo() {
   text(info, 10, height - 10);
 }
 
-
+boolean mouseOverPlayButton() {
+  return mouseX > xPosition && mouseX < xPosition + buttonWidth && mouseY > yPosition && mouseY < yPosition + buttonHeight;
+}
 void mousePressed() {
-  if (mouseButton == LEFT && !showMenu) {
+  if (mouseButton == LEFT && !showMenu && !mouseOverPlayButton()) {
     leftClicked = !leftClicked;
     if (leftClicked) {
       circleCenter = new PVector(mouseX, mouseY);
