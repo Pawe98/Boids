@@ -54,7 +54,7 @@ ControlP5 cp5;
 //Play Pause Button
 int buttonWidth = 80;
 int buttonHeight = 30;
-int xPosition = width - buttonWidth - 10; // 10 pixels from the right edge
+int xPosition = 0; // Will be set in setup() after window size is determined
 int yPosition = 10; // 10 pixels from the top edge
 
 boolean showMenu = false;
@@ -62,6 +62,8 @@ boolean showMenu = false;
 void setup() {
   flock = new Flock();
   size(1000, 1000);  // Set the size of the window
+  int xPosition = width - buttonWidth - 10; // 10 pixels from the right edge
+  int yPosition = 10; // 10 pixels from the top edge
   controlledLeader.isLeader = true;
   controlledLeader.isControlled = isControlled;
   controlledLeader.velocity = new PVector(0.0, 0.0);
@@ -114,7 +116,7 @@ void setup() {
   cam = new Camera(camBuffer, flock, controlledLeader);
 
 
-  playPauseButton = new GButton(this, xPosition, yPosition, buttonWidth, buttonHeight, "Pause");
+  playPauseButton = new GButton(this, xPosition, yPosition, buttonWidth, buttonHeight, "Pause"); //<>//
   playPauseButton.addEventHandler(this, "handleButtonEvents");
 
   frameCounter = 0;
@@ -219,7 +221,7 @@ void draw() {
 
   fill(255);  // Set text color to white
   textSize(16);  // Set text size
-  text("Frame: " + frameCounter, 10, 40);
+  text("Time (t): " + frameCounter, 10, 30);
 }
 
 boolean mouseOverDropdownArea() {
@@ -292,6 +294,11 @@ void keyPressed() {
     isControlled = !isControlled;
     cp5.getController("isControlled").changeValue(isControlled ? 1 : 0);
   }
+  
+  if (key == ' ') { 
+    handleButtonEvents(playPauseButton, GEvent.CLICKED);
+  }
+ 
 }
 
 void displayInfo() {
@@ -299,6 +306,7 @@ void displayInfo() {
   info += "Press 'i' to see influences\n";
   info += "Press 'r' to reset circle\n";
   info += "Press 'c' to toggle mouse control of the leader\n";
+  info += "Press 'SPACEBAR' to Play/Pause the simulation\n";
   info += "Press 'MOUSE_LEFT' to draw a circle\n";
   info += "Press 'MOUSE_RIGHT' to remove leader\n";
 

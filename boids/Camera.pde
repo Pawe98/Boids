@@ -37,7 +37,7 @@ class Camera extends PApplet {
     image(pg, 0, 0);
     fill(255);  // Set text color to white
     textSize(16);  // Set text size
-    text("Frame: " + frameCounter, 10, 40);
+    text("Time (t)" + frameCounter, 10, 30);
   }
 
   void setupWindowPosition(int x, int y) {
