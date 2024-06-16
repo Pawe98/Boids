@@ -1,4 +1,4 @@
-import controlP5.*;
+import controlP5.*; //<>//
 import g4p_controls.*;
 
 Camera cam;
@@ -23,7 +23,7 @@ boolean isPlaying = true;
 int frameCounter;
 
 // Static constants
-public static final int NUM_BOIDS = 128;
+public static final int NUM_BOIDS = 64;
 public static final boolean OVERRIDE_LIMITS_FOR_LEADER_INFLUENCE = false;
 
 // These will be adjustable via sliders
@@ -54,6 +54,12 @@ int xPosition = 0; // Will be set in setup() after window size is determined
 int yPosition = 10; // 10 pixels from the top edge
 
 boolean showMenu = false;
+
+
+//Obstacles
+boolean obstacleMode = false; // Flag for obstacle mode
+PVector obstacleStart; // Starting point of the obstacle
+boolean drawingObstacle = false; // Flag to indicate if an obstacle is being drawn
 
 void setup() {
   flock = new Flock();
@@ -95,11 +101,11 @@ void setup() {
   createSlider("viewRange", neighborDist, 0.0f, 500, 210);
   createSlider("FOV", fov, 1, 360, 260);
   createSlider("boidSize", boidSize, 1, 10, 310);
-  
+
   createSlider("separationWeight", separationWeight, 0.0f, 5.0f, 380);
   createSlider("alignmentWeight", alignmentWeight, 0.0f, 5.0f, 430);
   createSlider("cohesionWeight", cohesionWeight, 0.0f, 5.0f, 480);
-  
+
   createSlider("leaderInfluenceWeightSeparate", leaderInfluenceWeightSeparate, 0.0f, 100.0f, 550);
   createSlider("leaderInfluenceWeightAlign", leaderInfluenceWeightAlign, 0.0f, 100.0f, 600);
   createSlider("leaderInfluenceWeightCohere", leaderInfluenceWeightCohere, 0.0f, 100.0f, 650);
@@ -112,7 +118,7 @@ void setup() {
   cam = new Camera(camBuffer, flock, controlledLeader);
 
 
-  playPauseButton = new GButton(this, xPosition, yPosition, buttonWidth, buttonHeight, "Pause"); //<>//
+  playPauseButton = new GButton(this, xPosition, yPosition, buttonWidth, buttonHeight, "Pause");
   playPauseButton.addEventHandler(this, "handleButtonEvents");
 
   frameCounter = 0;
@@ -154,7 +160,7 @@ void draw() {
     if (controlledLeader.isControlled)
       controlledLeader.position.set(mouseX, mouseY);
 
-    if (leftClicked && circleCenter != null&& !showMenu) {
+    if (leftClicked && circleCenter != null&& !showMenu && !obstacleMode) {
       circleRadius = dist(circleCenter.x, circleCenter.y, mouseX, mouseY);
     }
 
@@ -189,11 +195,11 @@ void draw() {
     neighborDist = cp5.getController("viewRange").getValue();
     fov = cp5.getController("FOV").getValue();
     boidSize = cp5.getController("boidSize").getValue();
-    
+
     separationWeight = cp5.getController("separationWeight").getValue();
     alignmentWeight = cp5.getController("alignmentWeight").getValue();
     cohesionWeight = cp5.getController("cohesionWeight").getValue();
-    
+
     leaderInfluenceWeightSeparate = cp5.getController("leaderInfluenceWeightSeparate").getValue();
     leaderInfluenceWeightAlign = cp5.getController("leaderInfluenceWeightAlign").getValue();
     leaderInfluenceWeightCohere = cp5.getController("leaderInfluenceWeightCohere").getValue();
@@ -214,6 +220,16 @@ void draw() {
   }
   camBuffer.popMatrix();
   camBuffer.endDraw();
+
+  // Display obstacles
+  drawObstacles(this.g);
+  drawObstacles(camBuffer);
+
+  // Display obstacle being drawn if in obstacle mode
+  if (drawingObstacle && obstacleStart != null) {
+    drawTempObstacle(this.g);
+  }
+
 
   displayInfo();
 
@@ -292,11 +308,21 @@ void keyPressed() {
   if (key == 'c') {
     isControlled = !isControlled;
   }
-  
-  if (key == ' ') { 
+
+  if (key == ' ') {
     handleButtonEvents(playPauseButton, GEvent.CLICKED);
   }
- 
+
+  if (key == 'o') {
+    obstacleMode = !obstacleMode;
+    if (obstacleMode) {
+      controlledLeader.isControlled = false; // Disable leader control in obstacle mode
+    }
+  }
+
+  if (key == 'k') {
+    flock.obstacles.clear(); // Clear all obstacles
+  }
 }
 
 void displayInfo() {
@@ -307,7 +333,8 @@ void displayInfo() {
   info += "Press 'SPACEBAR' to Play/Pause the simulation\n";
   info += "Press 'MOUSE_LEFT' to draw a circle\n";
   info += "Press 'MOUSE_RIGHT' to remove leader\n";
-
+  info += "Press 'o' to toggle obstacle mode\n";
+  info += "Press 'k' to clear all obstacles\n";
 
   textAlign(LEFT, BOTTOM);
   fill(255);
@@ -319,20 +346,61 @@ boolean mouseOverPlayButton() {
   return mouseX > xPosition && mouseX < xPosition + buttonWidth && mouseY > yPosition && mouseY < yPosition + buttonHeight;
 }
 void mousePressed() {
-  if (mouseButton == LEFT && !showMenu && !mouseOverPlayButton()) {
-    leftClicked = !leftClicked;
-    if (leftClicked) {
-      circleCenter = new PVector(mouseX, mouseY);
+  if (obstacleMode) {
+    if (mouseButton == LEFT || mouseButton == RIGHT) {
+      obstacleStart = new PVector(mouseX, mouseY);
+      drawingObstacle = true;
     }
-  } else if (mouseButton == RIGHT) {
-    rightClicked = !rightClicked;
-    if (rightClicked) {
-      println("right" + controlledLeader.isLeader);
-      flock.addControlledBoid(controlledLeader);
-    } else {
-      println("nright" + controlledLeader.isLeader);
-      flock.removeBoid(controlledLeader);
+  } else {
+    if (mouseButton == LEFT && !showMenu && !mouseOverPlayButton()) {
+      leftClicked = !leftClicked;
+      if (leftClicked) {
+        circleCenter = new PVector(mouseX, mouseY);
+      }
+    } else if (mouseButton == RIGHT) {
+      rightClicked = !rightClicked;
+      if (rightClicked) {
+        println("right" + controlledLeader.isLeader);
+        flock.addControlledBoid(controlledLeader);
+      } else {
+        println("nright" + controlledLeader.isLeader);
+        flock.removeBoid(controlledLeader);
+      }
     }
+  }
+}
+
+void mouseReleased() {
+  if (obstacleMode && drawingObstacle) {
+    PVector endPoint = new PVector(mouseX, mouseY);
+    float radiusX = abs(endPoint.x - obstacleStart.x) / 2; // Adjusted for ellipse
+    float radiusY = abs(endPoint.y - obstacleStart.y) / 2; // Adjusted for ellipse
+    float centerX = (obstacleStart.x + endPoint.x) / 2; // Center of ellipse
+    float centerY = (obstacleStart.y + endPoint.y) / 2; // Center of ellipse
+    flock.addObstacle(new Obstacle(centerX, centerY, radiusX  * 2, radiusY  * 2));
+
+    drawingObstacle = false;
+    obstacleStart = null;
+  }
+}
+
+void drawObstacles(PGraphics buffer) {
+  for (Obstacle obstacle : flock.obstacles) {
+    obstacle.display(buffer);
+  }
+}
+
+void drawTempObstacle(PGraphics buffer) {
+  if (obstacleStart != null) {
+    buffer.stroke(255);
+    buffer.noFill();
+    PVector currentPos = new PVector(mouseX, mouseY);
+
+    float radiusX = abs(currentPos.x - obstacleStart.x) / 2; // Adjusted for ellipse
+    float radiusY = abs(currentPos.y - obstacleStart.y) / 2; // Adjusted for ellipse
+    float centerX = (obstacleStart.x + currentPos.x) / 2; // Center of ellipse
+    float centerY = (obstacleStart.y + currentPos.y) / 2; // Center of ellipse
+    buffer.ellipse(centerX, centerY, radiusX * 2, radiusY * 2);
   }
 }
 

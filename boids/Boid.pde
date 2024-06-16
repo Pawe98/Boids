@@ -1,6 +1,4 @@
-import java.util.List;
-import java.util.Arrays;
-
+import java.util.ArrayList; //<>// //<>// //<>//
 
 class Boid {
   PVector position;   // Position of the boid
@@ -15,7 +13,7 @@ class Boid {
   boolean debug = false; // Toggle for debug mode
   boolean influences = false; //Toggle for debug influences
 
-  //for edge wrap, knowing if it is duplicated for beeing near screen edge / in a buffer zone
+  //for edge wrap, knowing if it is duplicated for being near screen edge / in a buffer zone
   boolean duplicated = false;
 
   // Constructor initializes the boid's position and gives it a random velocity
@@ -27,7 +25,7 @@ class Boid {
     isLeader = false; // Initially not a leader
   }
 
-  // Check if the boid is clickedneighborDist
+  // Check if the boid is clicked
   void checkClicked() {
     if (mousePressed && !prevMousePressed && dist(position.x, position.y, mouseX, mouseY) < boidSize && mouseButton == LEFT) {
       if (!isControlled) {
@@ -49,7 +47,7 @@ class Boid {
   }
 
   // Calculate and apply the three flocking behaviors: separation, alignment, and cohesion
-  void flock(ArrayList<Boid> boids) {
+  void flock(ArrayList<Boid> boids, ArrayList<Obstacle> obstacles) {
     Boid leader = null;
     if (!isLeader) {
       leader = findClosestLeader(boids);
@@ -74,9 +72,15 @@ class Boid {
       applyForce(cohesion);
       applyForce(chaseLeader);
     }
+
+    // Obstacle avoidance should override flocking behaviors if an obstacle is detected
+    PVector avoidance = avoidObstacles(obstacles);
+    if (avoidance != null) {
+      applyForce(avoidance);
+    }
   }
 
-
+  // Method to find the closest leader in sight
   Boid findClosestLeader(ArrayList<Boid> boids) {
     float closestDist = Float.MAX_VALUE;
     Boid closestLeader = null;
@@ -129,15 +133,10 @@ class Boid {
 
         desired.normalize();
         desired.mult(maxSpeed * scale); // Scale the desired velocity
-        
-
-        //fill(255, 0, 0);
-        //ellipse(position.x + steerTowardsLeader.x * 1000, position.y + steerTowardsLeader.y * 1000, 20, 20);
 
         PVector separationForce = separate(boids, leader);
         PVector steerTowardsLeader = PVector.sub(desired, velocity);
         steerTowardsLeader.add(separationForce);
-        //steerTowardsLeader.limit(maxForce); // Scale the steering force
         return steerTowardsLeader;
       }
     }
@@ -159,7 +158,6 @@ class Boid {
         // Calculate vector pointing away from the other boid
         PVector diff = PVector.sub(position, other.position);
 
-
         if (other == leader) {
           diff.normalize(); // Normalize to get direction
           diff.div(d);      // Weight by distance
@@ -168,7 +166,6 @@ class Boid {
         } else {
           diff.normalize(); // Normalize to get direction
           diff.div(d);      // Weight by distance
-          // IMPORTANT!:IF WE CHASE THE LEADER, WE MUST REPELL MORE ALSO OTHERS
           if (leader != null && inSight(leader)) {
             steer.add(PVector.mult(diff, ((leaderInfluenceWeightSeparate / separationWeight) + (leaderInfluenceWeightCohere / cohesionWeight) + (leaderInfluenceWeightAlign / alignmentWeight)) / 3));  // Apply leader influence weight
             count += leaderInfluenceWeightSeparate;
@@ -195,15 +192,13 @@ class Boid {
     // Combine leader influence if present
     if (leader != null) {
       if (OVERRIDE_LIMITS_FOR_LEADER_INFLUENCE) {
-        steer.limit(maxForce*(leaderInfluenceWeightSeparate / separationWeight));
+        steer.limit(maxForce * (leaderInfluenceWeightSeparate / separationWeight));
         return steer;
       }
     }
     steer.limit(maxForce);
     return steer; // Return the calculated steering force
   }
-
-
 
   // Alignment: Steer towards the average heading of local flockmates
   PVector align(ArrayList<Boid> neighbors, Boid leader) {
@@ -229,24 +224,25 @@ class Boid {
     if (count > 0) {
       sum.div(count);   // Average the velocity of neighbors
       sum.setMag(maxSpeed);
-      PVector steer = PVector.sub(sum, velocity);
+      PVector steer = PVector.sub(sum, velocity); // Calculate the steering force
+
+      // Combine leader influence if present
       if (leader != null) {
         if (OVERRIDE_LIMITS_FOR_LEADER_INFLUENCE) {
-          steer.limit(maxForce*(leaderInfluenceWeightAlign / alignmentWeight));    // Limit to maximum steering force for neighbors
+          steer.limit(maxForce * (leaderInfluenceWeightAlign / alignmentWeight));
           return steer;
         }
       }
+
       steer.limit(maxForce);
-      return steer; // Return the calculated steering force
-    } else {
-      return new PVector(0, 0); // If no neighbors, return zero steering force
+      return steer;  // Return the steering force
     }
+    return new PVector(0, 0); // Return zero vector if no neighbors
   }
 
   // Cohesion: Steer to move towards the average position of local flockmates
   PVector cohere(ArrayList<Boid> neighbors, Boid leader) {
     PVector sum = new PVector(0, 0); // Sum of all positions
-    PVector leaderInfluence = new PVector(0, 0); // Influence of the leader's position
     float count = 0;  // Number of boids that are neighbors
 
     // Loop through all neighbors
@@ -266,50 +262,167 @@ class Boid {
     }
 
     if (count > 0) {
-      sum.div(count); // Average position of neighbors
-      PVector steer = seek(sum); // Steering force towards average position
+      sum.div(count); // Average the position of neighbors
+      return seek(sum); // Steer towards the average position
+    }
+    return new PVector(0, 0); // Return zero vector if no neighbors
+  }
 
+  // Steer towards a target
+  PVector seek(PVector target) {
+    PVector desired = PVector.sub(target, position);  // A vector pointing from the position to the target
+    desired.setMag(maxSpeed);
+    PVector steer = PVector.sub(desired, velocity); // Calculate the steering force
+    steer.limit(maxForce); // Limit the steering force to the maximum
+    return steer; // Return the steering force
+  }
 
-      if (leader != null && leaderInfluence.mag() > 0) {
-        if (OVERRIDE_LIMITS_FOR_LEADER_INFLUENCE) {
-          steer.limit(maxForce*(leaderInfluenceWeightCohere / cohesionWeight));
-          return steer;
-        } else {
-          steer.limit(maxForce);
-          return steer;
+  // Method to check for and avoid obstacles
+  //TODO make it only effetive based on the ray max length.
+  PVector avoidObstacles(ArrayList<Obstacle> obstacles) {
+    // Number of rays to cast within the FOV
+    int numRays = 16;
+    // Angle increment for each ray
+    float angleIncrement = radians(fov) / numRays;
+    // Starting angle based on the boid's heading and FOV
+    float startAngle = velocity.heading() - radians(fov) / 2;
+    float maxDistance = neighborDist;
+
+    // List to store open paths
+    ArrayList<PVector> openPaths = new ArrayList<>();
+
+    boolean foundObstacle = false;
+    PVector avoidance = new PVector(); // Vector for avoidance direction
+
+    // Loop through each ray direction
+    for (int i = 0; i < numRays; i++) {
+      // Calculate the direction of the current ray
+      float angle = startAngle + angleIncrement * i;
+      PVector ray = PVector.fromAngle(angle).setMag(100); // Set the magnitude of the ray
+
+      // Check for intersections with obstacles
+      boolean clear = true;
+      for (Obstacle obstacle : obstacles) {
+        if (obstacle.intersectsRay(position, ray)) {
+          clear = false;
+          foundObstacle = true;
+
+          // Calculate a point on the obstacle closest to the boid
+          PVector obstaclePosition = obstacle.position; // Example method to get obstacle position
+          PVector closestPointOnObstacle = obstaclePosition.copy().add(ray); // Assuming obstacle position is its center
+
+          // Calculate avoidance direction away from the obstacle
+          PVector awayFromObstacle = PVector.sub(position, closestPointOnObstacle);
+          avoidance.add(awayFromObstacle);
+
+          break;
         }
-      } else {
-        steer.limit(maxForce);
       }
 
-      return steer; // Return the calculated steering force
+      // If the ray is clear, add it to the list of open paths
+      if (clear) {
+        openPaths.add(ray); // Store the ray direction itself
+      }
+
+      // Set the color based on whether the ray is clear or not
+      //stroke(clear ? color(0, 255, 0) : color(255, 0, 0));
+      //line(position.x, position.y, position.x + ray.x, position.y + ray.y);
+    }
+
+    // If an obstacle was found, steer away from it
+    if (foundObstacle) {
+      // Normalize the avoidance vector
+      avoidance.normalize();
+      // Multiply by maximum speed to get desired velocity
+      avoidance.mult(maxSpeed);
+      avoidance.limit(maxForce);
+
+      // Uncomment below lines if you have applyForce method
+      // PVector steering = PVector.sub(avoidance, velocity);
+      // steering.limit(maxForce);
+      // applyForce(steering);
+
+      // Draw the avoidance direction (optional)
+      line(position.x, position.y, position.x + avoidance.x * 100, position.y + avoidance.y * 100);
+
+      return avoidance;
     } else {
-      return new PVector(0, 0); // If no neighbors, return zero steering force
+      return null;
     }
   }
 
-  // A method that calculates and applies a steering force towards a target
-  // STEER = DESIRED MINUS VELOCITY
-  PVector seek(PVector target) {
-    PVector desired = PVector.sub(target, position);  // A vector pointing from the position to the target
-    // Scale to maximum speed
-    desired.normalize();
-    desired.mult(maxSpeed);
 
-    // Steering = Desired minus Velocity
-    PVector steer = PVector.sub(desired, velocity);
-    return steer;
+
+
+  void drawVector(PGraphics context, PVector v, float scayl) {
+    context.pushMatrix();
+    // Translate to boid location
+    context.translate(position.x, position.y);
+    // Line from origin
+    context.line(0, 0, v.x * scayl, v.y * scayl);
+    context.popMatrix();
   }
 
-  // Update the boid's position based on its velocity and acceleration
+  void drawFOVCone(PGraphics context, float radius) {
+    // Calculate the angle in radians
+    float halfFOV = radians(fov / 2);
+    float angle = velocity.heading(); // Angle of the boid's velocity vector
+    // Calculate the start and end angles for the arc
+    float startAngle = angle - halfFOV;
+    float endAngle = angle + halfFOV;
+
+    // Set fill color with transparency (alpha)
+    context.noFill(); // Green with alpha 100
+    context.stroke(0, 255, 0, 100);
+
+    // Begin drawing the shape
+    context.beginShape();
+    context.vertex(position.x, position.y); // Start at the boid's position
+
+    // Draw vertices around the arc
+    for (float a = startAngle; a <= endAngle; a += 0.05) { // Increment angle in small steps
+      float x = position.x + cos(a) * radius;
+      float y = position.y + sin(a) * radius;
+      context.vertex(x, y);
+    }
+
+    // Close the shape by connecting back to the boid's position
+    context.vertex(position.x, position.y);
+    context.endShape(CLOSE);
+  }
+
+  void showInfluences(PGraphics context, ArrayList<Boid> boids) {
+    for (Boid other : boids) {
+      float d = PVector.dist(position, other.position);
+      //// Alignment & Cohecion influence
+      if ((d > 0) && (d < neighborDist) && inSight(other) && other.isLeader) {
+        context.stroke(0, 255, 0, map(d, 0, neighborDist, 255, 0)); // Green with intensity based on distance
+        context.strokeWeight(map(d, 0, neighborDist, 5, 0));
+        drawVector(context, PVector.sub(other.position, position), 1.0f);
+      }
+    }
+
+    for (Boid other : boids) {
+      float d = PVector.dist(position, other.position);
+
+      // Separation influence
+      if ((d > 0) && (d < desiredSeparation) && other.isLeader) {
+        context.stroke(255, 0, 0, map(d, 0, desiredSeparation, 255, 0)); // Red with intensity based on distance
+        context.strokeWeight(map(d, 0, desiredSeparation, 15, 0));
+        drawVector(context, PVector.sub(other.position, position), 1.0f);
+      }
+    }
+    context.strokeWeight(1);
+  }
+
   void update() {
-    velocity.add(acceleration); // Update velocity
-    velocity.limit(maxSpeed);  // Limit speed
-    position.add(velocity);     // Update position
-    acceleration.mult(0);       // Reset acceleration to zero
+    velocity.add(acceleration);
+    velocity.limit(maxSpeed);
+    position.add(velocity);
+    acceleration.mult(0);  // Reset acceleration to zero after each update
   }
 
-  // Display the boid as a triangle and show different behaviors with colors in debug mode
+  /// Display the boid as a triangle and show different behaviors with colors in debug mode
   void display(PGraphics context, ArrayList<Boid> boids) {
     float theta = velocity.heading() + PI / 2; // Calculate heading angle
     if (isLeader) {
@@ -318,7 +431,6 @@ class Boid {
     } else {
       context.fill(127); // Normal color for other boids
     }
-
     context.stroke(200);
 
     context.pushMatrix();
@@ -344,91 +456,16 @@ class Boid {
     }
   }
 
-  void drawFOVCone(PGraphics context, float radius) {
-    // Calculate the angle in radians
-    float halfFOV = radians(fov / 2);
-    float angle = velocity.heading(); // Angle of the boid's velocity vector
-
-    // Calculate the start and end angles for the arc
-    float startAngle = angle - halfFOV;
-    float endAngle = angle + halfFOV;
-
-    // Set fill color with transparency (alpha)
-    context.noFill(); // Green with alpha 100
-    context.stroke(0, 255, 0, 100);
-
-    // Begin drawing the shape
-    context.beginShape();
-    context.vertex(position.x, position.y); // Start at the boid's position
-
-    // Draw vertices around the arc
-    for (float a = startAngle; a <= endAngle; a += 0.05) { // Increment angle in small steps
-      float x = position.x + cos(a) * radius;
-      float y = position.y + sin(a) * radius;
-      context.vertex(x, y);
-    }
-
-    // Close the shape by connecting back to the boid's position
-    context.vertex(position.x, position.y);
-    context.endShape(CLOSE);
-  }
-
-
-  void drawVector(PGraphics context, PVector v, float scayl) {
-    context.pushMatrix();
-    // Translate to boid location
-    context.translate(position.x, position.y);
-    // Line from origin
-    context.line(0, 0, v.x * scayl, v.y * scayl);
-    context.popMatrix();
-  }
-
-  void showInfluences(PGraphics context, ArrayList<Boid> boids) {
-    for (Boid other : boids) {
-      float d = PVector.dist(position, other.position);
-
-      //// Alignment & Cohecion influence
-      if ((d > 0) && (d < neighborDist) && inSight(other) && other.isLeader) {
-        context.stroke(0, 255, 0, map(d, 0, neighborDist, 255, 0)); // Green with intensity based on distance
-        context.strokeWeight(map(d, 0, neighborDist, 5, 0));
-        drawVector(context, PVector.sub(other.position, position), 1.0f);
-      }
-    }
-
-    for (Boid other : boids) {
-      float d = PVector.dist(position, other.position);
-
-      // Separation influence
-      if ((d > 0) && (d < desiredSeparation) && other.isLeader) {
-        context.stroke(255, 0, 0, map(d, 0, desiredSeparation, 255, 0)); // Red with intensity based on distance
-        context.strokeWeight(map(d, 0, desiredSeparation, 15, 0));
-        drawVector(context, PVector.sub(other.position, position), 1.0f);
-      }
-    }
-    context.strokeWeight(1);
-  }
-
-
+  // Method to handle edge wrapping
   void edges() {
-    float edgeRepelRange = 100; // Range from edge where repulsion force starts
-    float edgeRepelStrength = 0.03; // Strength of the repulsion force
+    if (position.x > width) position.x = 0;
+    else if (position.x < 0) position.x = width;
+    if (position.y > height) position.y = 0;
+    else if (position.y < 0) position.y = height;
+  }
 
-    // Apply edge repulsion forces
-    if (position.x > width - edgeRepelRange) {
-      float forceMagnitude = map(position.x, width - edgeRepelRange, width, 0, edgeRepelStrength);
-      applyForce(new PVector(-forceMagnitude, 0)); // Apply force towards left
-    }
-    if (position.x < edgeRepelRange) {
-      float forceMagnitude = map(position.x, 0, edgeRepelRange, edgeRepelStrength, 0);
-      applyForce(new PVector(forceMagnitude, 0)); // Apply force towards right
-    }
-    if (position.y > height - edgeRepelRange) {
-      float forceMagnitude = map(position.y, height - edgeRepelRange, height, 0, edgeRepelStrength);
-      applyForce(new PVector(0, -forceMagnitude)); // Apply force towards top
-    }
-    if (position.y < edgeRepelRange) {
-      float forceMagnitude = map(position.y, 0, edgeRepelRange, edgeRepelStrength, 0);
-      applyForce(new PVector(0, forceMagnitude)); // Apply force towards bottom
-    }
+  // Method to check if this boid is equal to another boid
+  boolean equals(Boid other) {
+    return position.equals(other.position) && velocity.equals(other.velocity);
   }
 }
