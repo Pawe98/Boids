@@ -17,25 +17,30 @@ float circleRadius;
 float angle = 0; // Angle to determine the position on the circle
 
 // Static constants
-public static final int NUM_BOIDS = 25;
-public static final boolean OVERRIDE_LIMITS_FOR_LEADER_INFLUENCE = true;
+public static final int NUM_BOIDS = 64;
+public static final boolean OVERRIDE_LIMITS_FOR_LEADER_INFLUENCE = false;
 
 // These will be adjustable via sliders
 float maxForce = 0.03f; // Maximum steering force
 float maxSpeed = 2;     // Maximum speed
-float desiredSeparation = 35.0f; // Desired separation between boids
-float neighborDist = 220.0f; // Distance to consider boids as neighbors
+float fov = 270;
+float desiredSeparation = 45.0f; // Desired separation between boids
+float neighborDist = 105.0f; // Distance to consider boids as neighbors
 float separationWeight = 1.5f; // Weight for separation force
 float alignmentWeight = 1.0f; // Weight for alignment force
 float cohesionWeight = 1.0f; // Weight for cohesion force
 float boidSize = 3; // Size of the boid
 
+//TODO ADD FOV SLIDER
+//TODO ADD PLAY/PAUSE
+//TODO ADD FRAMECOUNTER to bottom of view
 
 
-float leaderInfluenceWeightSeparate = 1.5f; // Weight for leader's influence
-float leaderInfluenceWeightAlign = 1.0f; // Weight for leader's influence
-float leaderInfluenceWeightCohere = 1.0f; // Weight for leader's influence
-float leaderInfluenceWeightChase = 1.0f; // Weight on how much the leader is chased
+
+float leaderInfluenceWeightSeparate = 15.0f; // Weight for leader's influence
+float leaderInfluenceWeightAlign = 10.0f; // Weight for leader's influence
+float leaderInfluenceWeightCohere = 10.0f; // Weight for leader's influence
+float leaderInfluenceWeightChase = 0.0f; // Weight on how much the leader is chased
 
 Boid controlledLeader = new Boid(0, 0);
 boolean isControlled = false;
@@ -47,16 +52,14 @@ boolean showMenu = false;
 void setup() {
   flock = new Flock();
   size(1000, 1000);  // Set the size of the window
-  
-  circleCenter = new PVector(width / 2, height / 2);
-  circleRadius = 300;
-  
   controlledLeader.isLeader = true;
-  controlledLeader.isControlled = true;
-  controlledLeader.position = new PVector(width / 2 + circleRadius, height / 2);
-  controlledLeader.velocity = new PVector(0, -maxSpeed); // Tangentialgeschwindigkeit
-  flock.addControlledBoid(controlledLeader);
-  
+  controlledLeader.isControlled = isControlled;
+  controlledLeader.velocity = new PVector(0.0, 0.0);
+  controlledLeader.acceleration = new PVector(0, 0);
+  flock = new Flock();  // Create a new flock
+
+  circleCenter = new PVector(width / 2, height / 2);
+  circleRadius = 200;
   for (int i = 0; i < NUM_BOIDS; i++) {
     float angle = map(i, 0, NUM_BOIDS, 0, TWO_PI);
     float x = circleCenter.x + circleRadius * cos(angle);
@@ -73,22 +76,21 @@ void setup() {
     boid.velocity.set(velocity);
     flock.addBoid(boid);
   }
-
   // Initialize ControlP5
   cp5 = new ControlP5(this);
 
   // Create sliders for each parameter
-  createSlider("maxForce", maxForce, 0.01f, 0.2f, 110);
-  createSlider("maxSpeed", maxSpeed, 0.5f, 5, 160);
-  createSlider("desiredSeparation", desiredSeparation, 10, 100, 210);
-  createSlider("neighborDist", neighborDist, 20, 500, 260);
-  createSlider("separationWeight", separationWeight, 0.0f, 2.5f, 310);
-  createSlider("alignmentWeight", alignmentWeight, 0.0f, 2.5f, 360);
-  createSlider("cohesionWeight", cohesionWeight, 0.0f, 2.5f, 410);
+  createSlider("maxForce", maxForce, 0.0f, 0.2f, 110);
+  createSlider("maxSpeed", maxSpeed, 0.0f, 5, 160);
+  createSlider("desiredSeparation", desiredSeparation, 0.0f, 100, 210);
+  createSlider("neighborDist", neighborDist, 0.0f, 500, 260);
+  createSlider("separationWeight", separationWeight, 0.0f, 5.0f, 310);
+  createSlider("alignmentWeight", alignmentWeight, 0.0f, 5.0f, 360);
+  createSlider("cohesionWeight", cohesionWeight, 0.0f, 5.0f, 410);
   createSlider("boidSize", boidSize, 1, 10, 460);
-  createSlider("leaderInfluenceWeightSeparate", leaderInfluenceWeightSeparate, 0.0f, 20.0f, 510);
-  createSlider("leaderInfluenceWeightAlign", leaderInfluenceWeightAlign, 0.0f, 20.0f, 560);
-  createSlider("leaderInfluenceWeightCohere", leaderInfluenceWeightCohere, 0.0f, 20.0f, 610);
+  createSlider("leaderInfluenceWeightSeparate", leaderInfluenceWeightSeparate, 0.0f, 50.0f, 510);
+  createSlider("leaderInfluenceWeightAlign", leaderInfluenceWeightAlign, 0.0f, 50.0f, 560);
+  createSlider("leaderInfluenceWeightCohere", leaderInfluenceWeightCohere, 0.0f, 50.0f, 610);
   createSlider("leaderInfluenceWeightChase", leaderInfluenceWeightChase, 0.0f, 20.0f, 660);
 
   // Create checkbox for isControlled
@@ -103,7 +105,7 @@ void setup() {
 
 void createSlider(String name, float value, float min, float max, int yOffset) {
   cp5.addSlider(name)
-    .setPosition(width / 2 - 200, yOffset)
+    .setPosition(width / 2 - 150, yOffset)
     .setSize(200, 20)
     .setRange(min, max)
     .setValue(value)
