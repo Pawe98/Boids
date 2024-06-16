@@ -169,7 +169,7 @@ class Boid {
           diff.div(d);      // Weight by distance
           // IMPORTANT!:IF WE CHASE THE LEADER, WE MUST REPELL MORE ALSO OTHERS
           if (leader != null && inSight(leader)) {
-            steer.add(PVector.mult(diff, leaderInfluenceWeightSeparate));  // Apply leader influence weight
+            steer.add(PVector.mult(diff, ((leaderInfluenceWeightSeparate / separationWeight) + (leaderInfluenceWeightCohere / cohesionWeight) + (leaderInfluenceWeightAlign / alignmentWeight)) / 3));  // Apply leader influence weight
             count += leaderInfluenceWeightSeparate;
           } else {
             steer.add(diff);  // Add to steering vector
