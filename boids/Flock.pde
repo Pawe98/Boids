@@ -34,7 +34,7 @@ class Flock {
       b.checkClicked();  // Check if the boid is clicked
       b.flock(boids);  // Calculate and apply flocking behaviors
       b.update();      // Update the boid's position based on velocity and acceleration
-      b.edges();       // Handle edge wrapping
+      //b.edges();       // Handle edge wrapping
     }
   }
   

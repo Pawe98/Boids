@@ -1,4 +1,4 @@
-import controlP5.*;
+import controlP5.*; //<>//
 import g4p_controls.*;
 
 Camera cam;
@@ -15,27 +15,27 @@ boolean rightClicked = false;
 PVector circleCenter;
 float circleRadius;
 
-float angle = 0; // Angle to determine the position on the circle
+float angle = -PI/2; // Angle to determine the position on the circle
 
 GButton playPauseButton;
-boolean isPlaying = true;
+boolean isPlaying = false;
 
 int frameCounter;
 
 // Static constants
-public static final int NUM_BOIDS = 128;
+public static final int NUM_BOIDS = 9;
 public static final boolean OVERRIDE_LIMITS_FOR_LEADER_INFLUENCE = false;
 
 // These will be adjustable via sliders
 float maxForce = 0.03f; // Maximum steering force
 float maxSpeed = 2;     // Maximum speed
 float fov = 270;
-float desiredSeparation = 45.0f; // Desired separation between boids
-float neighborDist = 105.0f; // Distance to consider boids as neighbors
+float desiredSeparation = 85.0f; // Desired separation between boids
+float neighborDist = 155.0f; // Distance to consider boids as neighbors
 float separationWeight = 1.5f; // Weight for separation force
 float alignmentWeight = 1.0f; // Weight for alignment force
 float cohesionWeight = 1.0f; // Weight for cohesion force
-float boidSize = 1.5; // Size of the boid
+float boidSize = 5; // Size of the boid
 
 float leaderInfluenceWeightSeparate = 15.0f; // Weight for leader's influence
 float leaderInfluenceWeightAlign = 10.0f; // Weight for leader's influence
@@ -57,33 +57,58 @@ boolean showMenu = false;
 
 void setup() {
   flock = new Flock();
-  size(1000, 1000);  // Set the size of the window
-  int xPosition = width - buttonWidth - 10; // 10 pixels from the right edge
-  int yPosition = 10; // 10 pixels from the top edge
+  size(1500, 1000);  // Set the size of the window
+  xPosition = width - buttonWidth - 10; // 10 pixels from the right edge
+  yPosition = 10; // 10 pixels from the top edge
   controlledLeader.isLeader = true;
   controlledLeader.isControlled = isControlled;
-  controlledLeader.velocity = new PVector(0.0, 0.0);
+  controlledLeader.velocity = new PVector(2.0, 0.0);
   controlledLeader.acceleration = new PVector(0, 0);
   flock = new Flock();  // Create a new flock
 
-  circleCenter = new PVector(width / 2, height / 2);
-  circleRadius = 200;
-  for (int i = 0; i < NUM_BOIDS; i++) {
-    float angle = map(i, 0, NUM_BOIDS, 0, TWO_PI);
-    float x = circleCenter.x + circleRadius * cos(angle);
-    float y = circleCenter.y + circleRadius * sin(angle);
-    PVector position = new PVector(x, y);
 
-    // Berechne die tangentiale Geschwindigkeit
-    float vx = -circleRadius * sin(angle) * (maxSpeed / circleRadius);
-    float vy = circleRadius * cos(angle) * (maxSpeed / circleRadius);
-    PVector velocity = new PVector(vx, vy);
-    velocity.setMag(maxSpeed);
 
-    Boid boid = new Boid(position.x, position.y);
-    boid.velocity.set(velocity);
-    flock.addBoid(boid);
+  float rightXOffset = 400;
+  float downYOffset = 60;
+  float startX = 100;
+  float startY = 100;
+
+  for (int i = 0; i < NUM_BOIDS; i ++) {
+    PVector position = new PVector (startX, startY + downYOffset * i);
+    PVector velocity = new PVector(2, 0);
+    if (i == NUM_BOIDS/2) {
+      controlledLeader.position = position;
+      controlledLeader.velocity.set(velocity);
+      //controlledLeader.highlight();
+      flock.addBoid(controlledLeader);
+    } else {
+      Boid boid = new Boid(position.x, position.y);
+      boid.velocity.set(velocity);
+      flock.addBoid(boid);
+    }
   }
+
+
+
+  circleRadius = 200;
+  circleCenter = new PVector(startX, NUM_BOIDS/2 * downYOffset + circleRadius + startY );
+
+  //for (int i = 0; i < NUM_BOIDS; i++) {
+  //  float angle = map(i, 0, NUM_BOIDS, 0, TWO_PI);
+  //  float x = circleCenter.x + circleRadius * cos(angle);
+  //  float y = circleCenter.y + circleRadius * sin(angle);
+  //  PVector position = new PVector(x, y);
+
+  //  // Berechne die tangentiale Geschwindigkeit
+  //  float vx = -circleRadius * sin(angle) * (maxSpeed / circleRadius);
+  //  float vy = circleRadius * cos(angle) * (maxSpeed / circleRadius);
+  //  PVector velocity = new PVector(vx, vy);
+  //  velocity.setMag(maxSpeed);
+
+  //  Boid boid = new Boid(position.x, position.y);
+  //  boid.velocity.set(velocity);
+  //  flock.addBoid(boid);
+  //}
 
   // Initialize ControlP5
   cp5 = new ControlP5(this);
@@ -95,11 +120,11 @@ void setup() {
   createSlider("viewRange", neighborDist, 0.0f, 500, 210);
   createSlider("FOV", fov, 1, 360, 260);
   createSlider("boidSize", boidSize, 1, 10, 310);
-  
+
   createSlider("separationWeight", separationWeight, 0.0f, 5.0f, 380);
   createSlider("alignmentWeight", alignmentWeight, 0.0f, 5.0f, 430);
   createSlider("cohesionWeight", cohesionWeight, 0.0f, 5.0f, 480);
-  
+
   createSlider("leaderInfluenceWeightSeparate", leaderInfluenceWeightSeparate, 0.0f, 100.0f, 550);
   createSlider("leaderInfluenceWeightAlign", leaderInfluenceWeightAlign, 0.0f, 100.0f, 600);
   createSlider("leaderInfluenceWeightCohere", leaderInfluenceWeightCohere, 0.0f, 100.0f, 650);
@@ -108,11 +133,11 @@ void setup() {
 
   hideMenu(); // Start with sliders hidden
 
-  camBuffer = createGraphics(400, 400);  // Create the off-screen buffer
+  camBuffer = createGraphics(800, 800);  // Create the off-screen buffer
   cam = new Camera(camBuffer, flock, controlledLeader);
 
 
-  playPauseButton = new GButton(this, xPosition, yPosition, buttonWidth, buttonHeight, "Pause"); //<>//
+  playPauseButton = new GButton(this, xPosition, yPosition, buttonWidth, buttonHeight, "Pause");
   playPauseButton.addEventHandler(this, "handleButtonEvents");
 
   frameCounter = 0;
@@ -162,24 +187,7 @@ void draw() {
       processCircle(controlledLeader);
     }
 
-    // Check for mouse hover over the dropdown background
-    if (mouseX >= width / 2 - 20 && mouseX <= width / 2 + 20 && mouseY <= 40) {
-      showMenu = true;
-    } else if (!mouseOverDropdownArea()) {
-      showMenu = false;
-    }
 
-    if (showMenu) {
-
-      showMenu();
-    } else {
-      // Draw the dropdown arrow
-      fill(255);
-      noStroke();
-      triangle(width / 2 - 10, 10, width / 2 + 10, 10, width / 2, 30);
-
-      hideMenu();
-    }
 
 
     // Update Boid properties with slider values
@@ -189,11 +197,11 @@ void draw() {
     neighborDist = cp5.getController("viewRange").getValue();
     fov = cp5.getController("FOV").getValue();
     boidSize = cp5.getController("boidSize").getValue();
-    
+
     separationWeight = cp5.getController("separationWeight").getValue();
     alignmentWeight = cp5.getController("alignmentWeight").getValue();
     cohesionWeight = cp5.getController("cohesionWeight").getValue();
-    
+
     leaderInfluenceWeightSeparate = cp5.getController("leaderInfluenceWeightSeparate").getValue();
     leaderInfluenceWeightAlign = cp5.getController("leaderInfluenceWeightAlign").getValue();
     leaderInfluenceWeightCohere = cp5.getController("leaderInfluenceWeightCohere").getValue();
@@ -201,6 +209,26 @@ void draw() {
 
     frameCounter++;
   }
+
+  // Check for mouse hover over the dropdown background
+  if (mouseX >= width / 2 - 20 && mouseX <= width / 2 + 20 && mouseY <= 40) {
+    showMenu = true;
+  } else if (!mouseOverDropdownArea()) {
+    showMenu = false;
+  }
+
+  if (showMenu) {
+
+    showMenu();
+  } else {
+    // Draw the dropdown arrow
+    fill(255);
+    noStroke();
+    triangle(width / 2 - 10, 10, width / 2 + 10, 10, width / 2, 30);
+
+    hideMenu();
+  }
+
   flock.display(this.g);
 
   // Update camBuffer for the camera view
@@ -292,11 +320,10 @@ void keyPressed() {
   if (key == 'c') {
     isControlled = !isControlled;
   }
-  
-  if (key == ' ') { 
+
+  if (key == ' ') {
     handleButtonEvents(playPauseButton, GEvent.CLICKED);
   }
- 
 }
 
 void displayInfo() {

@@ -18,6 +18,11 @@ class Boid {
   //for edge wrap, knowing if it is duplicated for beeing near screen edge / in a buffer zone
   boolean duplicated = false;
 
+  boolean marked = false;
+
+  void highlight() {
+    marked = !marked;
+  }
   // Constructor initializes the boid's position and gives it a random velocity
   Boid(float x, float y) {
     position = new PVector(x, y);     // Set initial position
@@ -129,7 +134,7 @@ class Boid {
 
         desired.normalize();
         desired.mult(maxSpeed * scale); // Scale the desired velocity
-        
+
 
         //fill(255, 0, 0);
         //ellipse(position.x + steerTowardsLeader.x * 1000, position.y + steerTowardsLeader.y * 1000, 20, 20);
@@ -311,25 +316,31 @@ class Boid {
 
   // Display the boid as a triangle and show different behaviors with colors in debug mode
   void display(PGraphics context, ArrayList<Boid> boids) {
-    float theta = velocity.heading() + PI / 2; // Calculate heading angle
+    // Calculate heading angle and fine-tune it
+    float theta = velocity.heading() + PI / 2; // Adjust heading angle to align boid with velocity
+
+    // Calculate the rotated vertices
+    PVector[] vertices = new PVector[3];
+    vertices[0] = rotateVertex(0, -boidSize * 2, theta);  // Nose of the boid
+    vertices[1] = rotateVertex(-boidSize, boidSize * 2, theta); // Left wing of the boid
+    vertices[2] = rotateVertex(boidSize, boidSize * 2, theta);  // Right wing of the boid
+
     if (isLeader) {
-      // Display leader differently
       context.fill(255, 0, 0); // Red color for leader
+    } else if ( marked) {
+      context.fill(255,255,255);
     } else {
       context.fill(127); // Normal color for other boids
     }
 
     context.stroke(200);
 
-    context.pushMatrix();
-    context.translate(position.x, position.y);
-    context.rotate(theta);
+    // Drawing the boid without using rotate
     context.beginShape();
-    context.vertex(0, -boidSize * 2);
-    context.vertex(-boidSize, boidSize * 2);
-    context.vertex(boidSize, boidSize * 2);
+    for (PVector v : vertices) {
+      context.vertex(position.x + v.x, position.y + v.y);
+    }
     context.endShape(CLOSE);
-    context.popMatrix();
 
     if (debug) {
       drawFOVCone(context, neighborDist);
@@ -343,6 +354,16 @@ class Boid {
       showInfluences(context, boids);
     }
   }
+
+  // Method to rotate a vertex by theta radians
+  PVector rotateVertex(float x, float y, float theta) {
+    float cosTheta = cos(theta);
+    float sinTheta = sin(theta);
+    float newX = x * cosTheta - y * sinTheta;
+    float newY = x * sinTheta + y * cosTheta;
+    return new PVector(newX, newY);
+  }
+
 
   void drawFOVCone(PGraphics context, float radius) {
     // Calculate the angle in radians
@@ -388,7 +409,7 @@ class Boid {
       float d = PVector.dist(position, other.position);
 
       //// Alignment & Cohecion influence
-      if ((d > 0) && (d < neighborDist) && inSight(other) && other.isLeader) {
+      if ((d > 0) && (d < neighborDist) && inSight(other)) {
         context.stroke(0, 255, 0, map(d, 0, neighborDist, 255, 0)); // Green with intensity based on distance
         context.strokeWeight(map(d, 0, neighborDist, 5, 0));
         drawVector(context, PVector.sub(other.position, position), 1.0f);
@@ -399,7 +420,7 @@ class Boid {
       float d = PVector.dist(position, other.position);
 
       // Separation influence
-      if ((d > 0) && (d < desiredSeparation) && other.isLeader) {
+      if ((d > 0) && (d < desiredSeparation)) {
         context.stroke(255, 0, 0, map(d, 0, desiredSeparation, 255, 0)); // Red with intensity based on distance
         context.strokeWeight(map(d, 0, desiredSeparation, 15, 0));
         drawVector(context, PVector.sub(other.position, position), 1.0f);
