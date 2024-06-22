@@ -97,6 +97,22 @@ class Boid {
 
     return closestLeader;
   }
+  
+  // Method to get visible neighbors within the boid's field of view
+  ArrayList<Boid> getVisibleNeighbors(ArrayList<Boid> boids) {
+    ArrayList<Boid> visibleNeighbors = new ArrayList<>();
+
+    for (Boid other : boids) {
+      if (this != other) { // Exclude self
+        float d = PVector.dist(position, other.position);
+        if (d > 0 && d < neighborDist && inSight(other)) {
+          visibleNeighbors.add(other);
+        }
+      }
+    }
+
+    return visibleNeighbors;
+  }
 
   boolean inSight(Boid boid) {
     float d = PVector.dist(position, boid.position);
