@@ -278,8 +278,6 @@ class Boid {
   }
 
   // Method to check for and avoid obstacles
-  // Method to check for and avoid obstacles
-  // Method to check for and avoid obstacles
   PVector avoidObstacles(ArrayList<Obstacle> obstacles) {
     // Number of rays to cast within the FOV
     int numRays = 16;
@@ -355,6 +353,7 @@ class Boid {
       avoidance.normalize();
       // Multiply by maximum speed to get desired velocity
       avoidance.mult(maxSpeed);
+      avoidance.sub(velocity);
       avoidance.limit(maxForce*2);
 
       return avoidance;

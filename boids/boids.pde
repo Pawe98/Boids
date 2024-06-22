@@ -23,7 +23,7 @@ boolean isPlaying = true;
 int frameCounter;
 
 // Static constants
-public static final int NUM_BOIDS = 64;
+public static final int NUM_BOIDS = 14;
 public static final boolean OVERRIDE_LIMITS_FOR_LEADER_INFLUENCE = false;
 
 // These will be adjustable via sliders
