@@ -278,7 +278,8 @@ class Boid {
   }
 
   // Method to check for and avoid obstacles
-  //TODO make it only effetive based on the ray max length.
+  // Method to check for and avoid obstacles
+  // Method to check for and avoid obstacles
   PVector avoidObstacles(ArrayList<Obstacle> obstacles) {
     // Number of rays to cast within the FOV
     int numRays = 16;
@@ -298,7 +299,7 @@ class Boid {
     for (int i = 0; i < numRays; i++) {
       // Calculate the direction of the current ray
       float angle = startAngle + angleIncrement * i;
-      PVector ray = PVector.fromAngle(angle).setMag(100); // Set the magnitude of the ray
+      PVector ray = PVector.fromAngle(angle).setMag(maxDistance); // Set the magnitude of the ray to maxDistance
 
       // Check for intersections with obstacles
       boolean clear = true;
@@ -307,12 +308,30 @@ class Boid {
           clear = false;
           foundObstacle = true;
 
+          // Calculate the distance to the obstacle
+          PVector diff = PVector.sub(position, obstacle.position);
+          float distanceToObstacle = diff.mag();
+
           // Calculate a point on the obstacle closest to the boid
           PVector obstaclePosition = obstacle.position; // Example method to get obstacle position
           PVector closestPointOnObstacle = obstaclePosition.copy().add(ray); // Assuming obstacle position is its center
 
           // Calculate avoidance direction away from the obstacle
           PVector awayFromObstacle = PVector.sub(position, closestPointOnObstacle);
+
+          // Scale the avoidance force based on distance
+          float avoidanceStrength;
+          if (distanceToObstacle < neighborDist) {
+            // "Explode" avoidance force if distance is less than neighborDist
+            avoidanceStrength = map(distanceToObstacle, 0, neighborDist, 10, 1);
+          } else {
+            // Normal scaling if distance is greater than or equal to neighborDist
+            avoidanceStrength = 1 / distanceToObstacle;
+          }
+
+          awayFromObstacle.normalize();
+          awayFromObstacle.mult(avoidanceStrength);
+
           avoidance.add(awayFromObstacle);
 
           break;
@@ -324,9 +343,10 @@ class Boid {
         openPaths.add(ray); // Store the ray direction itself
       }
 
-      // Set the color based on whether the ray is clear or not
-      //stroke(clear ? color(0, 255, 0) : color(255, 0, 0));
-      //line(position.x, position.y, position.x + ray.x, position.y + ray.y);
+      if (debug && influences) {
+        stroke(clear ? color(0, 255, 0) : color(255, 0, 0));
+        line(position.x, position.y, position.x + ray.x, position.y + ray.y);
+      }
     }
 
     // If an obstacle was found, steer away from it
@@ -335,24 +355,13 @@ class Boid {
       avoidance.normalize();
       // Multiply by maximum speed to get desired velocity
       avoidance.mult(maxSpeed);
-      avoidance.limit(maxForce);
-
-      // Uncomment below lines if you have applyForce method
-      // PVector steering = PVector.sub(avoidance, velocity);
-      // steering.limit(maxForce);
-      // applyForce(steering);
-
-      // Draw the avoidance direction (optional)
-      line(position.x, position.y, position.x + avoidance.x * 100, position.y + avoidance.y * 100);
+      avoidance.limit(maxForce*2);
 
       return avoidance;
     } else {
       return null;
     }
   }
-
-
-
 
   void drawVector(PGraphics context, PVector v, float scayl) {
     context.pushMatrix();
