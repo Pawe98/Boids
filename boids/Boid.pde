@@ -280,7 +280,7 @@ class Boid {
   // Method to check for and avoid obstacles
   PVector avoidObstacles(ArrayList<Obstacle> obstacles) {
     // Number of rays to cast within the FOV
-    int numRays = 16;
+    int numRays = 32;
     // Angle increment for each ray
     float angleIncrement = radians(fov) / numRays;
     // Starting angle based on the boid's heading and FOV
@@ -319,12 +319,12 @@ class Boid {
 
           // Scale the avoidance force based on distance
           float avoidanceStrength;
-          if (distanceToObstacle < neighborDist) {
-            // "Explode" avoidance force if distance is less than neighborDist
-            avoidanceStrength = map(distanceToObstacle, 0, neighborDist, 10, 1);
+          if (distanceToObstacle < desiredSeparation) {
+            // "Explode" avoidance force if distance is less than desiredSeparation
+            avoidanceStrength = map(distanceToObstacle, 0, desiredSeparation, 10, 0.1);
           } else {
-            // Normal scaling if distance is greater than or equal to neighborDist
-            avoidanceStrength = 1 / distanceToObstacle;
+            // Normal scaling if distance is greater than or equal to desiredSeparation
+            avoidanceStrength = map(distanceToObstacle, desiredSeparation, neighborDist, 0, 0.005);
           }
 
           awayFromObstacle.normalize();
@@ -350,11 +350,11 @@ class Boid {
     // If an obstacle was found, steer away from it
     if (foundObstacle) {
       // Normalize the avoidance vector
-      avoidance.normalize();
+      //avoidance.normalize();
       // Multiply by maximum speed to get desired velocity
       avoidance.mult(maxSpeed);
-      avoidance.sub(velocity);
-      avoidance.limit(maxForce*2);
+      //avoidance.sub(velocity);
+      avoidance.limit(maxForce*3);
 
       return avoidance;
     } else {
