@@ -1,5 +1,7 @@
-import controlP5.*; //<>//
+import controlP5.*; //<>// //<>//
 import g4p_controls.*;
+
+
 
 Camera cam;
 PGraphics camBuffer;
@@ -20,27 +22,73 @@ float angle = 0; // Angle to determine the position on the circle
 GButton playPauseButton;
 boolean isPlaying = true;
 
-int frameCounter;
+int frameCounter = 1;
 
 // Static constants
-public static final int NUM_BOIDS = 32;
+public static final int NUM_BOIDS = 10;
 public static final boolean OVERRIDE_LIMITS_FOR_LEADER_INFLUENCE = false;
 
-// These will be adjustable via sliders
+//// These will be adjustable via sliders
+//// Define your configuration parameters with initial values
 float maxForce = 0.03f; // Maximum steering force
 float maxSpeed = 2;     // Maximum speed
 float fov = 270;
-float desiredSeparation = 45.0f; // Desired separation between boids
-float neighborDist = 105.0f; // Distance to consider boids as neighbors
-float separationWeight = 1.5f; // Weight for separation force
-float alignmentWeight = 1.0f; // Weight for alignment force
-float cohesionWeight = 1.0f; // Weight for cohesion force
-float boidSize = 1.5; // Size of the boid
+//float desiredSeparation = 45.0f; // Desired separation between boids //<>//
+//float neighborDist = 105.0f; // Distance to consider boids as neighbors
+//float separationWeight = 1.5f; // Weight for separation force
+//float alignmentWeight = 1.0f; // Weight for alignment force
+//float cohesionWeight = 1.0f; // Weight for cohesion force
+//float boidSize = 1.5f; // Size of the boid
+//float leaderInfluenceWeightSeparate = 15.0f; // Weight for leader's influence
+//float leaderInfluenceWeightAlign = 10.0f; // Weight for leader's influence
+//float leaderInfluenceWeightCohere = 10.0f; // Weight for leader's influence
+//float leaderInfluenceWeightChase = 0.0f; // Weight on how much the leader is chased
 
-float leaderInfluenceWeightSeparate = 15.0f; // Weight for leader's influence
-float leaderInfluenceWeightAlign = 10.0f; // Weight for leader's influence
-float leaderInfluenceWeightCohere = 10.0f; // Weight for leader's influence
+// These will be adjustable via sliders
+// Define your configuration parameters with initial values
+
+float desiredSeparation = 0.0f; // Desired separation between boids
+float neighborDist = 0.0f; // Distance to consider boids as neighbors
+float separationWeight = 0.0f; // Weight for separation force
+float alignmentWeight = 0.0f; // Weight for alignment force
+float cohesionWeight = 0.0f; // Weight for cohesion force
+float boidSize = 0.0f; // Size of the boid
+float leaderInfluenceWeightSeparate = 0.0f; // Weight for leader's influence
+float leaderInfluenceWeightAlign = 0.0f; // Weight for leader's influence
+float leaderInfluenceWeightCohere = 0.0f; // Weight for leader's influence
 float leaderInfluenceWeightChase = 0.0f; // Weight on how much the leader is chased
+
+// Define hard-coded maximum values for sliders
+float maxMaxForce = 0.2f;
+float maxMaxSpeed = 5.0f;
+float maxDesiredSeparation = 100.0f;
+float maxNeighborDist = 400.0f;
+float maxSeparationWeight = 2.0f;
+float maxAlignmentWeight = 2.0f;
+float maxCohesionWeight = 2.0f;
+float maxBoidSize = 10.0f;
+float maxLeaderInfluenceWeightSeparate = 4.0f;
+float maxLeaderInfluenceWeightAlign = 4.0f;
+float maxLeaderInfluenceWeightCohere = 4.0f;
+float maxLeaderInfluenceWeightChase = 4.0f;
+
+
+
+// Define the number of slices for each parameter
+int numSlices = 5;
+
+float stepDesiredSeparation = (maxDesiredSeparation - 0.0f) / numSlices;
+float stepNeighborDist = (maxNeighborDist - 0.0f) / numSlices;
+float stepSeparationWeight = (maxSeparationWeight - 0.0f) / numSlices;
+float stepAlignmentWeight = (maxAlignmentWeight - 0.0f) / numSlices;
+float stepCohesionWeight = (maxCohesionWeight - 0.0f) / numSlices;
+
+
+// Define the current permutation index
+int permutationCounter = 0;
+int runCounter = 0;
+int runAmmount = 10;
+int runTime = 1000;
 
 Boid controlledLeader = new Boid(0, 0);
 boolean isControlled = false;
@@ -62,54 +110,37 @@ PVector obstacleStart; // Starting point of the obstacle
 boolean drawingObstacle = false; // Flag to indicate if an obstacle is being drawn
 
 void setup() {
-  flock = new Flock();
+  frameRate(1000);
   size(1000, 1000);  // Set the size of the window
   int xPosition = width - buttonWidth - 10; // 10 pixels from the right edge
-  int yPosition = 10; // 10 pixels from the top edge
+  frameCounter = 0;
+
   controlledLeader.isLeader = true;
   controlledLeader.isControlled = isControlled;
   controlledLeader.velocity = new PVector(0.0, 0.0);
   controlledLeader.acceleration = new PVector(0, 0);
-  flock = new Flock();  // Create a new flock
 
-  circleCenter = new PVector(width / 2, height / 2);
-  circleRadius = 200;
-  for (int i = 0; i < NUM_BOIDS; i++) {
-    float angle = map(i, 0, NUM_BOIDS, 0, TWO_PI);
-    float x = circleCenter.x + circleRadius * cos(angle);
-    float y = circleCenter.y + circleRadius * sin(angle);
-    PVector position = new PVector(x, y);
-
-    // Berechne die tangentiale Geschwindigkeit
-    float vx = -circleRadius * sin(angle) * (maxSpeed / circleRadius);
-    float vy = circleRadius * cos(angle) * (maxSpeed / circleRadius);
-    PVector velocity = new PVector(vx, vy);
-    velocity.setMag(maxSpeed);
-
-    Boid boid = new Boid(position.x, position.y);
-    boid.velocity.set(velocity);
-    flock.addBoid(boid);
-  }
+  startNewRun();
 
   // Initialize ControlP5
   cp5 = new ControlP5(this);
 
   // Create sliders for each parameter
-  createSlider("maxForce", maxForce, 0.0f, 0.2f, 60);
-  createSlider("maxSpeed", maxSpeed, 0.0f, 5, 110);
-  createSlider("desiredSeparation", desiredSeparation, 0.0f, 100, 160);
-  createSlider("viewRange", neighborDist, 0.0f, 500, 210);
-  createSlider("FOV", fov, 1, 360, 260);
-  createSlider("boidSize", boidSize, 1, 10, 310);
+  createSlider("maxForce", maxForce, 0.0f, maxMaxForce, 60);
+  createSlider("maxSpeed", maxSpeed, 0.0f, maxMaxSpeed, 110);
+  createSlider("desiredSeparation", desiredSeparation, 0.0f, maxDesiredSeparation, 160);
+  createSlider("viewRange", neighborDist, 0.0f, maxNeighborDist, 210);
+  createSlider("FOV", fov, 0, 360, 260);
+  createSlider("boidSize", boidSize, 1.5, maxBoidSize, 310);
 
-  createSlider("separationWeight", separationWeight, 0.0f, 5.0f, 380);
-  createSlider("alignmentWeight", alignmentWeight, 0.0f, 5.0f, 430);
-  createSlider("cohesionWeight", cohesionWeight, 0.0f, 5.0f, 480);
+  createSlider("separationWeight", separationWeight, 0.0f, maxSeparationWeight, 380);
+  createSlider("alignmentWeight", alignmentWeight, 0.0f, maxAlignmentWeight, 430);
+  createSlider("cohesionWeight", cohesionWeight, 0.0f, maxCohesionWeight, 480);
 
-  createSlider("leaderInfluenceWeightSeparate", leaderInfluenceWeightSeparate, 0.0f, 100.0f, 550);
-  createSlider("leaderInfluenceWeightAlign", leaderInfluenceWeightAlign, 0.0f, 100.0f, 600);
-  createSlider("leaderInfluenceWeightCohere", leaderInfluenceWeightCohere, 0.0f, 100.0f, 650);
-  createSlider("leaderInfluenceWeightChase", leaderInfluenceWeightChase, 0.0f, 100.0f, 700);
+  createSlider("leaderInfluenceWeightSeparate", leaderInfluenceWeightSeparate, 0.0f, maxLeaderInfluenceWeightSeparate, 550);
+  createSlider("leaderInfluenceWeightAlign", leaderInfluenceWeightAlign, 0.0f, maxLeaderInfluenceWeightAlign, 600);
+  createSlider("leaderInfluenceWeightCohere", leaderInfluenceWeightCohere, 0.0f, maxLeaderInfluenceWeightCohere, 650);
+  createSlider("leaderInfluenceWeightChase", leaderInfluenceWeightChase, 0.0f, maxLeaderInfluenceWeightChase, 700);
 
 
   hideMenu(); // Start with sliders hidden
@@ -120,8 +151,25 @@ void setup() {
 
   playPauseButton = new GButton(this, xPosition, yPosition, buttonWidth, buttonHeight, "Pause");
   playPauseButton.addEventHandler(this, "handleButtonEvents");
+  while(true)
+  drawSimulation();
+}
 
-  frameCounter = 0;
+void startNewRun() {
+  // Reset the frame counter
+  frameCounter = 1;
+
+  // Increment the run counter
+  runCounter++;
+
+  flock = new Flock();
+
+  for (int i = 0; i < NUM_BOIDS; i++) {
+    float positionX = random(0, width);
+    float positionY = random(0, height);
+    Boid boid = new Boid(positionX, positionY);
+    flock.addBoid(boid);
+  }
 }
 
 void createSlider(String name, float value, float min, float max, int yOffset) {
@@ -147,96 +195,152 @@ void createCheckBox(String name, boolean value, int yOffset) {
     .setColorActive(color(255, 0, 0));
 }
 
-void draw() {
-  controlledLeader.isControlled = isControlled;
-  background(20);  // Clear the background
+void updateParameters(int permutationIndex) {
+  int[] indices = calculatePermutationIndices(permutationIndex);
 
-  if (circleCenter != null && circleRadius > 0f) {
-    drawCircle(this.g);
+  // Update parameters based on permutation indices
+  desiredSeparation = indices[0] * stepDesiredSeparation;
+  neighborDist = indices[1] * stepNeighborDist;
+  separationWeight = indices[2] * stepSeparationWeight;
+  alignmentWeight = indices[3] * stepAlignmentWeight;
+  cohesionWeight = indices[4] * stepCohesionWeight;
+}
+
+int[] calculatePermutationIndices(int permutationIndex) {
+  int[] indices = new int[5]; // Reduced size to exclude some values
+  int remainder = permutationIndex;
+
+  for (int i = 4; i >= 0; i--) { // Adjusted loop range to 10 (indices.length - 1)
+    indices[i] = remainder % numSlices;
+    remainder /= numSlices;
   }
+ //<>//
+  return indices;
+}
+
+void draw() {
+  
+}
+
+void drawSimulation() {
+  // Check if the maximum number of runs has been reached
+  if (runCounter <= runAmmount) {
+
+    // Check if it's time to start a new run based on frame count
+    if (frameCounter % (runTime+1) == 0) {
+      // New run
+      startNewRun();
+      return;
+    }
+  } else {
+    
+    permutationCounter++;
+    
+    // Adjust parameters for the next iteration
+    updateParameters(permutationCounter);
+    
+    // Reset permutation counter and increment runCounter when all permutations are done
+    if (permutationCounter == pow(numSlices, 12)) { //<>//
+      stop();
+    }
+    runCounter = 1;
+    return;
+  }
+
+
+  controlledLeader.isControlled = isControlled;
+  //background(20);  // Clear the background
+
+  //if (circleCenter != null && circleRadius > 0f) {
+  //  drawCircle(this.g);
+  //}
 
   if (isPlaying) {
-    flock.run();     // Run the flock simulation
-    if (controlledLeader.isControlled)
-      controlledLeader.position.set(mouseX, mouseY);
+  //  flock.run();     // Run the flock simulation
+  //  if (controlledLeader.isControlled)
+  //    controlledLeader.position.set(mouseX, mouseY);
 
-    if (leftClicked && circleCenter != null&& !showMenu && !obstacleMode) {
-      circleRadius = dist(circleCenter.x, circleCenter.y, mouseX, mouseY);
-    }
+  //  if (leftClicked && circleCenter != null&& !showMenu && !obstacleMode) {
+  //    circleRadius = dist(circleCenter.x, circleCenter.y, mouseX, mouseY);
+  //  }
 
-    if (circleCenter != null && circleRadius > 0f) {
-      processCircle(controlledLeader);
-    }
+  //  if (circleCenter != null && circleRadius > 0f) {
+  //    processCircle(controlledLeader);
+  //  }
 
-    // Check for mouse hover over the dropdown background
-    if (mouseX >= width / 2 - 20 && mouseX <= width / 2 + 20 && mouseY <= 40) {
-      showMenu = true;
-    } else if (!mouseOverDropdownArea()) {
-      showMenu = false;
-    }
+  //  // Check for mouse hover over the dropdown background
+  //  if (mouseX >= width / 2 - 20 && mouseX <= width / 2 + 20 && mouseY <= 40) {
+  //    showMenu = true;
+  //  } else if (!mouseOverDropdownArea()) {
+  //    showMenu = false;
+  //  }
 
-    if (showMenu) {
+  //  if (showMenu) {
 
-      showMenu();
-    } else {
-      // Draw the dropdown arrow
-      fill(255);
-      noStroke();
-      triangle(width / 2 - 10, 10, width / 2 + 10, 10, width / 2, 30);
+  //    showMenu();
+  //  } else {
+  //    // Draw the dropdown arrow
+  //    fill(255);
+  //    noStroke();
+  //    triangle(width / 2 - 10, 10, width / 2 + 10, 10, width / 2, 30);
 
-      hideMenu();
-    }
+  //    hideMenu();
+  //  }
 
 
-    // Update Boid properties with slider values
-    maxForce = cp5.getController("maxForce").getValue();
-    maxSpeed = cp5.getController("maxSpeed").getValue();
-    desiredSeparation = cp5.getController("desiredSeparation").getValue();
-    neighborDist = cp5.getController("viewRange").getValue();
-    fov = cp5.getController("FOV").getValue();
-    boidSize = cp5.getController("boidSize").getValue();
+    //// Update Boid properties with slider values
+    //maxForce = cp5.getController("maxForce").getValue();
+    //maxSpeed = cp5.getController("maxSpeed").getValue();
+    //desiredSeparation = cp5.getController("desiredSeparation").getValue();
+    //neighborDist = cp5.getController("viewRange").getValue(); //<>//
+    //fov = cp5.getController("FOV").getValue();
+    //boidSize = cp5.getController("boidSize").getValue();
 
-    separationWeight = cp5.getController("separationWeight").getValue();
-    alignmentWeight = cp5.getController("alignmentWeight").getValue();
-    cohesionWeight = cp5.getController("cohesionWeight").getValue();
+    //separationWeight = cp5.getController("separationWeight").getValue();
+    //alignmentWeight = cp5.getController("alignmentWeight").getValue();
+    //cohesionWeight = cp5.getController("cohesionWeight").getValue();
 
-    leaderInfluenceWeightSeparate = cp5.getController("leaderInfluenceWeightSeparate").getValue();
-    leaderInfluenceWeightAlign = cp5.getController("leaderInfluenceWeightAlign").getValue();
-    leaderInfluenceWeightCohere = cp5.getController("leaderInfluenceWeightCohere").getValue();
-    leaderInfluenceWeightChase = cp5.getController("leaderInfluenceWeightChase").getValue();
+    //leaderInfluenceWeightSeparate = cp5.getController("leaderInfluenceWeightSeparate").getValue();
+    //leaderInfluenceWeightAlign = cp5.getController("leaderInfluenceWeightAlign").getValue();
+    //leaderInfluenceWeightCohere = cp5.getController("leaderInfluenceWeightCohere").getValue();
+    //leaderInfluenceWeightChase = cp5.getController("leaderInfluenceWeightChase").getValue();
 
-    frameCounter++;
+    String filename = "config_" + permutationCounter +"run_" + runCounter + ".csv";  // Example filename
+    flock.saveToCSV(filename);
   }
-  flock.display(this.g);
+  //flock.display(this.g);
 
   // Update camBuffer for the camera view
-  camBuffer.beginDraw();
-  camBuffer.background(20);  // Clear the buffer background
-  camBuffer.pushMatrix();
-  camBuffer.translate(camBuffer.width / 2 - controlledLeader.position.x, camBuffer.height / 2 - controlledLeader.position.y);
-  flock.display(camBuffer);
-  if (circleCenter != null && circleRadius > 0f) {
-    drawCircle(camBuffer);
-  }
-  camBuffer.popMatrix();
-  camBuffer.endDraw();
+  //camBuffer.beginDraw();
+  //camBuffer.background(20);  // Clear the buffer background
+  //camBuffer.pushMatrix();
+  //camBuffer.translate(camBuffer.width / 2 - controlledLeader.position.x, camBuffer.height / 2 - controlledLeader.position.y);
+  //flock.display(camBuffer);
+  //if (circleCenter != null && circleRadius > 0f) {
+//drawCircle(camBuffer);
+  //}
+  //camBuffer.popMatrix();
+  //camBuffer.endDraw();
 
   // Display obstacles
-  drawObstacles(this.g);
-  drawObstacles(camBuffer);
+  //drawObstacles(this.g);
+  //drawObstacles(camBuffer);
 
   // Display obstacle being drawn if in obstacle mode
-  if (drawingObstacle && obstacleStart != null) {
-    drawTempObstacle(this.g);
+  //if (drawingObstacle && obstacleStart != null) {
+    //drawTempObstacle(this.g);
+  //}
+
+
+  //displayInfo();
+
+
+  //fill(255);  // Set text color to white
+  //textSize(16);  // Set text size
+  //text("Time (t): " + frameCounter, 10, 30); //<>//
+  if (isPlaying) {
+     frameCounter++; 
   }
-
-
-  displayInfo();
-
-
-  fill(255);  // Set text color to white
-  textSize(16);  // Set text size
-  text("Time (t): " + frameCounter, 10, 30);
 }
 
 boolean mouseOverDropdownArea() {

@@ -48,12 +48,12 @@ class Boid {
 
   // Calculate and apply the three flocking behaviors: separation, alignment, and cohesion
   void flock(ArrayList<Boid> boids, ArrayList<Obstacle> obstacles) {
+    ArrayList<Boid> neighbors = getNeighbors(boids);
+    
     Boid leader = null;
     if (!isLeader) {
-      leader = findClosestLeader(boids);
+      leader = findClosestLeader(neighbors);
     }
-
-    ArrayList<Boid> neighbors = getNeighbors(boids);
 
     PVector separation = separate(neighbors, leader);
     PVector alignment = align(neighbors, leader);
@@ -74,9 +74,11 @@ class Boid {
     }
 
     // Obstacle avoidance should override flocking behaviors if an obstacle is detected
-    PVector avoidance = avoidObstacles(obstacles);
-    if (avoidance != null) {
-      applyForce(avoidance);
+    if (obstacles.size() > 0) {
+      PVector avoidance = avoidObstacles(obstacles);
+      if (avoidance != null) {
+        applyForce(avoidance);
+      }
     }
   }
 
@@ -97,7 +99,7 @@ class Boid {
 
     return closestLeader;
   }
-  
+
   // Method to get visible neighbors within the boid's field of view
   ArrayList<Boid> getVisibleNeighbors(ArrayList<Boid> boids) {
     ArrayList<Boid> visibleNeighbors = new ArrayList<>();
