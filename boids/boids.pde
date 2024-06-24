@@ -1,6 +1,7 @@
 import controlP5.*; //<>// //<>//
 import g4p_controls.*;
 
+boolean simulationFinished = false;
 
 
 Camera cam;
@@ -75,7 +76,7 @@ float maxLeaderInfluenceWeightChase = 4.0f;
 
 
 // Define the number of slices for each parameter
-int numSlices = 5;
+int numSlices = 2;
 
 float stepDesiredSeparation = (maxDesiredSeparation - 0.0f) / numSlices;
 float stepNeighborDist = (maxNeighborDist - 0.0f) / numSlices;
@@ -85,9 +86,9 @@ float stepCohesionWeight = (maxCohesionWeight - 0.0f) / numSlices;
 
 
 // Define the current permutation index
-int permutationCounter = 0;
+int permutationCounter = 1;
 int runCounter = 0;
-int runAmmount = 10;
+int runAmmount = 1;
 int runTime = 1000;
 
 Boid controlledLeader = new Boid(0, 0);
@@ -151,7 +152,7 @@ void setup() {
 
   playPauseButton = new GButton(this, xPosition, yPosition, buttonWidth, buttonHeight, "Pause");
   playPauseButton.addEventHandler(this, "handleButtonEvents");
-  while(true)
+  while(!simulationFinished)
   drawSimulation();
 }
 
@@ -234,15 +235,15 @@ void drawSimulation() {
     }
   } else {
     
-    permutationCounter++;
-    
     // Adjust parameters for the next iteration
     updateParameters(permutationCounter);
     
     // Reset permutation counter and increment runCounter when all permutations are done
-    if (permutationCounter == pow(numSlices, 12)) { //<>//
-      stop();
+    if (permutationCounter == pow(numSlices, 5)) {
+      simulationFinished = true;
+      exit();
     }
+    permutationCounter++;
     runCounter = 1;
     return;
   }
