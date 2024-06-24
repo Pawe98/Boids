@@ -76,7 +76,7 @@ float maxLeaderInfluenceWeightChase = 4.0f;
 
 
 // Define the number of slices for each parameter
-int numSlices = 2;
+int numSlices = 5;
 
 float stepDesiredSeparation = (maxDesiredSeparation - 0.0f) / numSlices;
 float stepNeighborDist = (maxNeighborDist - 0.0f) / numSlices;
@@ -88,7 +88,7 @@ float stepCohesionWeight = (maxCohesionWeight - 0.0f) / numSlices;
 // Define the current permutation index
 int permutationCounter = 1;
 int runCounter = 0;
-int runAmmount = 1;
+int runAmmount = 10;
 int runTime = 1000;
 
 Boid controlledLeader = new Boid(0, 0);
