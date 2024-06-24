@@ -60,26 +60,20 @@ class Flock {
       if (!fileExists) {
         // Write configuration parameters
         writer.append("Configuration Parameters\n");
-        writer.append("maxForce,maxSpeed,fov,desiredSeparation,neighborDist,separationWeight,");
-        writer.append("alignmentWeight,cohesionWeight,");
 
 
         // Write values of configuration parameters
-        writer.append(maxForce + ",");
-        writer.append(maxSpeed + ",");
-        writer.append(fov + ",");
-        writer.append(desiredSeparation + ",");
-        writer.append(neighborDist + ",");
-        writer.append(separationWeight + ",");
-        writer.append(alignmentWeight + ",");
-        writer.append(cohesionWeight + ",");
-        writer.append(leaderInfluenceWeightSeparate + ",");
-        writer.append(leaderInfluenceWeightAlign + ",");
-        writer.append(leaderInfluenceWeightCohere + ",");
-        writer.append(leaderInfluenceWeightChase + "\n");
+        writer.append("maxForce=" + maxForce + ",");
+        writer.append("maxSpeed=" + maxSpeed + ",");
+        writer.append("fov=" + fov + ",");
+        writer.append("desiredSeparation=" + desiredSeparation + ",");
+        writer.append("neighborDist=" + neighborDist + ",");
+        writer.append("separationWeight=" + separationWeight + ",");
+        writer.append("alignmentWeight=" + alignmentWeight + ",");
+        writer.append("cohesionWeight=" + cohesionWeight);
 
         // Write header for boids' data
-        writer.append("\nFrame,Boid ID,Position X,Position Y,Velocity X,Velocity Y,Visible Neighbors\n");
+        writer.append("\n\nFrame,Boid ID,Position X,Position Y,Velocity X,Velocity Y,Visible Neighbors\n");
       }
 
       // Write each boid's data
