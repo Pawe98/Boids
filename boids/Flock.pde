@@ -48,7 +48,6 @@ class Flock {
   }
 
   // Save boids' positions and visible neighbors to a CSV file, appending if the file exists
-  // Save boids' positions and visible neighbors to a CSV file, appending if the file exists
   void saveToCSV(String filename) {
     try {
       // Determine if the file already exists
@@ -58,27 +57,16 @@ class Flock {
 
       // If the file didn't exist before, write the header and configuration parameters
       if (!fileExists) {
-        // Write configuration parameters
-        writer.append("Configuration Parameters\n");
-
-
-        // Write values of configuration parameters
-        writer.append("maxForce=" + maxForce + ",");
-        writer.append("maxSpeed=" + maxSpeed + ",");
-        writer.append("fov=" + fov + ",");
-        writer.append("desiredSeparation=" + desiredSeparation + ",");
-        writer.append("neighborDist=" + neighborDist + ",");
-        writer.append("separationWeight=" + separationWeight + ",");
-        writer.append("alignmentWeight=" + alignmentWeight + ",");
-        writer.append("cohesionWeight=" + cohesionWeight);
 
         // Write header for boids' data
-        writer.append("\n\nFrame,Boid ID,Position X,Position Y,Velocity X,Velocity Y,Visible Neighbors\n");
+        writer.append("PermutationCounter,RunCounter,Frame,Boid ID,Position X,Position Y,Velocity X,Velocity Y,Visible Neighbors,maxForce,maxSpeed,fov,desiredSeparation,neighborDist,separationWeight,alignmentWeight,cohesionWeight\n");
       }
 
       // Write each boid's data
       for (int i = 0; i < boids.size(); i++) {
         Boid b = boids.get(i);
+        writer.append(permutationCounter + ",");
+        writer.append(runCounter + ",");
         writer.append(frameCounter + ",");
         writer.append(i + ",");
         writer.append(b.position.x + ",");
@@ -94,7 +82,16 @@ class Flock {
             writer.append(";");
           }
         }
-        writer.append("]");
+        writer.append("]" + ",");
+        // Write values of configuration parameters
+        writer.append(maxForce + ",");
+        writer.append(maxSpeed + ",");
+        writer.append(fov + ",");
+        writer.append(desiredSeparation + ",");
+        writer.append(neighborDist + ",");
+        writer.append(separationWeight + ",");
+        writer.append(alignmentWeight + ",");
+        writer.append(String.valueOf(cohesionWeight));
         writer.append("\n");
       }
 
@@ -106,7 +103,6 @@ class Flock {
       e.printStackTrace();
     }
   }
-
 
   void display(PGraphics g) {
     for (Boid b : boids) {
