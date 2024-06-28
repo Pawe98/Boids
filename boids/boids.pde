@@ -18,7 +18,7 @@ float circleRadius;
 float angle = 0; // Angle to determine the position on the circle
 
 GButton playPauseButton;
-boolean isPlaying = true;
+boolean isPlaying = false;
 
 int frameCounter;
 
